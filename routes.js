@@ -69,6 +69,20 @@ module.exports = function(app)  {
 
     app.route('/v1/mob/animal/history/:token/:id_animal')
     .get(apiUser.history_animal_controller.mobhistoryanimalid);
+
+
+    app.route('/v1/mob/user/account/:token')
+    .get(apiUser.account_controller.mobaccount);
+
+    app.route('/v1/mob/user/account/edit/name/:token')
+    .put(apiUser.account_controller.mobaccounteditname);
+
+    app.route('/v1/mob/user/account/edit/picture/:token')
+    .put(apiUser.account_controller.mobaccounteditpicture);
+
+    app.route('/v1/mob/user/account/edit/password/:token')
+    .put(apiUser.account_controller.mobaccounteditpassword);
+
     
 
 }
