@@ -1,17 +1,19 @@
-const express = require('express');
-const bodyParser = require('body-parser');
+const express = require("express");
+const bodyParser = require("body-parser");
 const app = express();
-const cors = require('cors')
+const cors = require("cors");
 
 //parse application json
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(cors())
+app.use(cors());
 
 //routes
-var routes = require('./routes');
+var routes = require("./routes");
+app.use("/v1/mob/image/", express.static("upload/images"));
+app.use("/v1/mob/image/profile", express.static("upload/profile"));
 routes(app);
 
 app.listen(5000, () => {
-    console.log(`Server started on port`);
+  console.log(`Server started on port`);
 });
