@@ -78,8 +78,7 @@ exports.websendrequestdata = function (req, res) {
     let date_start = req.body.date_start;
     let date_end = req.body.date_end;
     let id_request_data = req.body.id_request_data;
-
-    // Langkah 1: Masukkan data ke dalam send_datas
+    
     connection.query(`INSERT INTO send_datas 
                         (local_name, latin_name, habitat, description,
                         city, longitude, latitude, image, amount,
@@ -113,12 +112,15 @@ exports.websendrequestdata = function (req, res) {
                                     let subject = results[0].subject;
                                     let body = results[0].body;
                                     let id_user = results[0].id_user;
-
+                                    let now = new Date();
+                                    let datetimenow = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2) + ' ' +
+                                        ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) + ':' + ('0' + now.getSeconds()).slice(-2);
+                
                                     // Langkah 4: Masukkan data ke dalam history_request_datas
                                     connection.query(`INSERT INTO history_request_datas
-                                                        (email, name, profession, instances, subject, body, id_user, id_send_data)
-                                                        VALUES(?,?,?,?,?,?,?,?)`,
-                                        [email, name, profession, instances, subject, body, id_user, id_send_data],
+                                                        (email, name, profession, instances, subject, body, id_user, id_send_data,date)
+                                                        VALUES(?,?,?,?,?,?,?,?,?)`,
+                                        [email, name, profession, instances, subject, body, id_user, id_send_data,datetimenow],
                                         function (error, rows, fields) {
                                             if (error) {
                                                 console.log(error);
