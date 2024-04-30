@@ -1,5 +1,8 @@
 "use strict";
-
+const path = require("path");
+const url = require("url");
+const fs = require("fs");
+const multer = require("multer");
 var response = require("../../res");
 var connection = require("../../connection");
 const verifikasi = require("../../middleware/verifikasi");
@@ -97,58 +100,74 @@ exports.mobaccounteditpicture = function (req, res) {
 };
 
 //UPLOAD ANIMAL IMAGE BY USER
-exports.mob_upload_image = function (req, res) {
-    let token = req.params.token;
-    console.log(token);
-    verifikasi(token)(req, res, function () {
-      var id_user = req.decoded.id_user;
-  
-      // storage engine
-      const storage = multer.diskStorage({
-        destination: "./upload/images",
-        filename: (req, file, cb) => {
-          return cb(
-            null,
-            `${file.fieldname}_${id_user + Date.now()}${path.extname(
-              file.originalname
-            )}`
+exports.mob_update_profile = function (req, res) {
+  let token = req.params.token;
+  console.log(token);
+  verifikasi(token)(req, res, function () {
+    var id_user = req.decoded.id_user;
+    connection.query(
+      `SELECT picture FROM users 
+                        WHERE id_user=?`,
+      [id_user],
+      function (error, rows, fields) {
+        if (error) {
+          console.log(error);
+          res.status(500).send("Internal Server Error");
+        } else {
+          console.log("cek ", rows[0].picture);
+          const uploadDirectory = path.join(
+            __dirname,
+            "..",
+            "..",
+            "upload",
+            "images"
           );
-        },
-      });
-  
-      const upload = multer({
-        storage: storage,
-        limits: {
-          fileSize: 10 * 1024 * 1024, // 10 MB (dalam bytes)
-        },
-      }).single("image");
-      upload(req, res, function (err) {
-        if (err instanceof multer.MulterError) {
-          // Jika terjadi kesalahan dari multer (misalnya melebihi batas ukuran file)
-          return res.json({
-            success: 0,
-            message: err.message,
+
+          // Menggunakan modul url untuk mengurai URL
+          const parsedUrl = url.parse(rows[0].picture);
+
+          // Menggunakan modul path untuk mendapatkan nama file dari path
+          const fileName = path.basename(parsedUrl.pathname);
+          console.log(fileName);
+          // storage engine
+          const storage = multer.diskStorage({
+            destination: "./upload/profile",
+            filename: (req, file, cb) => {
+              return cb(null, fileName);
+            },
           });
-        } else if (err) {
-          // Jika terjadi kesalahan lainnya
-          return res.json({
-            success: 0,
-            message: "Terjadi kesalahan saat mengunggah gambar",
+
+          const upload = multer({
+            storage: storage,
+            limits: {
+              fileSize: 10 * 1024 * 1024, // 10 MB (dalam bytes)
+            },
+          }).single("image");
+          upload(req, res, function (err) {
+            if (err instanceof multer.MulterError) {
+              // Jika terjadi kesalahan dari multer (misalnya melebihi batas ukuran file)
+              return res.json({
+                success: 0,
+                message: err.message,
+              });
+            } else if (err) {
+              // Jika terjadi kesalahan lainnya
+              return res.json({
+                success: 0,
+                message: "Terjadi kesalahan saat mengunggah gambar",
+              });
+            }
+            res.json({
+              success: 200,
+              image_url: `http://192.168.1.22:5000/v1/mob/image/profile/${req.file.filename}`,
+            });
           });
+          //   response.ok(rows, res);
         }
-  
-        // Jika berhasil, Anda dapat mengakses informasi file yang diunggah
-        // melalui req.file
-        // var nama = req.file.filename;
-        res.json({
-          success: 200,
-          image_url: `http://192.168.0.118:5000/v1/mob/image/${req.file.filename}`,
-        });
-      });
-    });
-  };
-
-
+      }
+    );
+  });
+};
 
 //EDIT ACCOUNT PASSWORD
 exports.mobaccounteditpassword = function (req, res) {

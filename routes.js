@@ -18,6 +18,10 @@ module.exports = function (app) {
     .get(apiUser.editable_animal_controller.mobeditableanimals);
 
   app
+    .route("/v1/mob/user/check/:token")
+    .get(apiUser.auth.check_user);
+    
+  app
     .route("/v1/mob/animal/editable/:token/:id_animal")
     .get(apiUser.editable_animal_controller.mobeditableanimalid);
 
@@ -59,7 +63,7 @@ module.exports = function (app) {
 
   app
     .route("/v1/mob/user/account/edit/picture/:token")
-    .put(apiUser.account_controller.mobaccounteditpicture);
+    .put(apiUser.account_controller.mob_update_profile);
 
   app
     .route("/v1/mob/user/account/edit/password/:token")

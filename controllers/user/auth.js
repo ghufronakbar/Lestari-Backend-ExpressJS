@@ -7,6 +7,7 @@ var response = require("../../res");
 var jwt = require("jsonwebtoken");
 var config = require("../../config/secret");
 var ip = require("ip");
+const verifikasi = require("../../middleware/verifikasi");
 
 //REGISTER
 // exports.register = function(req,res){
@@ -120,5 +121,13 @@ exports.login = function (req, res) {
         });
       }
     }
+  });
+};
+
+exports.check_user = function (req, res) {
+  let token = req.params.token;
+  verifikasi(token)(req, res, function () {
+    var id_user = req.decoded.id_user;
+    res.status(200).json({status: 200, id_user: id_user });
   });
 };
