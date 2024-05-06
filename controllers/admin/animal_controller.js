@@ -13,11 +13,11 @@ exports.webanimals = function (req, res) {
     connection.query(`SELECT animals.id_animal, animals.local_name, animals.latin_name, 
                         animals.habitat, animals.description, animals.city, animals.longitude, 
                         animals.latitude, animals.image, animals.amount, users.id_user, users.name, 
-                        users.email, animals.date, animals.updated_at FROM animals JOIN users 
+                        users.email, animals.date, animals.updated_at, users.picture AS user_picture,users.phone FROM animals JOIN users 
                         WHERE animals.id_user = users.id_user`,
         function (error, rows, fields) {
             if (error) {
-                connection.log(error);
+                console.log(error)
             } else {
                 response.ok(rows, res)
             };
@@ -31,11 +31,11 @@ exports.webanimalid = function (req, res) {
     connection.query(`SELECT animals.id_animal, animals.local_name, animals.latin_name, 
                         animals.habitat, animals.description, animals.city, animals.longitude, 
                         animals.latitude, animals.image, animals.amount, users.id_user, users.name, 
-                        users.email, animals.date, animals.updated_at FROM animals JOIN users 
+                        users.email, animals.date, animals.updated_at,users.picture AS user_picture, users.phone  FROM animals JOIN users 
                         WHERE animals.id_user = users.id_user AND animals.id_animal = ?`, [id],
         function (error, rows, fields) {
             if (error) {
-                connection.log(error);
+                console.log(error)
             } else {
                 response.ok(rows, res)
             };
