@@ -134,7 +134,7 @@ exports.websendrequestdata = function (req, res) {
                                                 res.status(500).send("Failed to insert data into history_request_datas");
                                             } else {
 
-                                                console.log(process.env)
+                                                
                                                 ///////////////
 
                                                 const transporter = nodemailer.createTransport({
@@ -203,13 +203,13 @@ exports.websendrequestdata = function (req, res) {
                                                 </html>
                                                     `
                                                 }
-                                               console.log(msg.to)
+                                               
                                                 // async..await is not allowed in global scope, must use a wrapper
                                                 async function main() {
                                                     // send mail with defined transport object
                                                     const info = await transporter.sendMail(msg);
 
-                                                    console.log("Message sent: %s", info.messageId);
+                                                    // console.log("Message sent: %s", info.messageId);
                                                     // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
                                                 }
 
@@ -218,7 +218,7 @@ exports.websendrequestdata = function (req, res) {
                                             }
                                         });
                                 } else {
-                                    console.log("No data found for the specified ID.");
+                                    
                                     res.status(404).send("No data found for the specified ID.");
                                 }
                             }
