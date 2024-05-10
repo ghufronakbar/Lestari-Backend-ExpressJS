@@ -33,6 +33,53 @@ exports.mobaccount = function (req, res) {
     );
   });
 };
+//Post password Users match
+exports.mobaccountpassword = function (req, res) {
+  let token = req.body.token;
+  let password = req.body.password;
+  verifikasi(token)(req, res, function () {
+    var id_user = req.decoded.id_user;
+    connection.query(
+      `SELECT password FROM users 
+                        WHERE id_user=?`,
+      [id_user],
+      function (error, rows, fields) {
+        if (error) {
+          console.log(error);
+          res.status(500).send("Internal Server Error");
+        } else {
+          var oldPassword = md5(password);
+          if (oldPassword == rows[0].password) {
+            res.status(200).json({ match: true });
+          } else {
+            res.status(200).json({ match: false });
+          }
+        }
+      }
+    );
+  });
+};
+
+//PUT PASSWORD
+exports.mobpasswordedit = function (req, res) {
+  let new_password = req.body.new_password;
+  let token = req.body.token;
+  verifikasi(token)(req, res, function () {
+    var id_user = req.decoded.id_user;
+    connection.query(
+      `UPDATE users SET password=? WHERE id_user=?`,
+      [md5(new_password), id_user],
+      function (error, rows, fields) {
+        if (error) {
+          console.log(error);
+          res.status(500).send("Internal Server Error");
+        } else {
+          response.ok(rows, res);
+        }
+      }
+    );
+  });
+};
 
 exports.mobregisteruser = function (req, res) {
   let userName = req.body.name;
@@ -80,7 +127,6 @@ exports.mobregisteruser = function (req, res) {
     }
   );
 };
-
 
 //EDIT ACCOUNT NAME
 exports.mobaccounteditname = function (req, res) {
