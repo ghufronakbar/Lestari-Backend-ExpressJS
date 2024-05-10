@@ -8,6 +8,12 @@ module.exports = function (app) {
   var apiUser = require("./controllers/user");
 
   //API ADMIN
+
+  //LOGIN
+
+  app.route("/v1/web/login").post(apiAdmin.account_controller.login);
+
+
   app.route("/v1/web/animals").get(apiAdmin.animal_controller.webanimals);
 
   app.route("/v1/web/animal/:id").get(apiAdmin.animal_controller.webanimalid);
@@ -142,4 +148,12 @@ module.exports = function (app) {
   app
     .route("/v1/mob/user/new_password")
     .put(apiUser.account_controller.mobpasswordedit);
+
+
+
+
+    //FORGET PASSWORD
+    app
+    .route("/v1/web/user/forgot_password")
+    .post(apiUser.account_controller.mobforgotpassword);
 };

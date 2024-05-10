@@ -4,7 +4,7 @@ const response = require('../../res');
 var connection = require('../../connection');
 var md5 = require('md5');
 const nodemailer = require("nodemailer");
-const dotenv = require('dotenv').config()
+require('dotenv').config()
 
 
 exports.index = function (req, res) {
@@ -51,7 +51,97 @@ exports.webapproverequestdata = function (req, res) {
                 if (error) {
                     console.log(error);
                 } else {
-                    response.ok(rows, res)
+                    connection.query(`SELECT * FROM request_datas WHERE id_request_data=?`,[id],
+                        function(error,results,fields){
+                            if(error){
+                                console.log(error)
+                            }else{
+                                let email = results[0].email
+
+                                const transporter = nodemailer.createTransport({
+                                    service: 'gmail',
+                                    host: "smtp@gmail.com",
+                                    port: 587,
+                                    secure: false,
+                                    auth: {
+                                        user: process.env.EMAIL,
+                                        pass: process.env.PASSWORD,
+                                    },
+                                });
+            
+                                const msg = {
+                                    from: '"Lestari" <main@lestari.com>', // sender address
+                                    to: `${email}`, // list of receivers
+                                    subject: "Data Datwa Liar", // Subject line                                                                    
+                                    html: `
+                                                                                <!DOCTYPE html>
+                                                                                <html lang="en">
+                                                                                <head>
+                                                                                    <meta charset="UTF-8">
+                                                                                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                                                                    <title>Informasi Pengiriman Data Konservasi Satwa dari Lestari</title>
+                                                                                    <style>
+                                                                                        /* Style email content */
+                                                                                        body {
+                                                                                            font-family: Arial, sans-serif;
+                                                                                            line-height: 1.6;
+                                                                                        }
+                                                                                        .container {
+                                                                                            max-width: 600px;
+                                                                                            margin: auto;
+                                                                                            padding: 20px;
+                                                                                            border: 1px solid #ccc;
+                                                                                            border-radius: 5px;
+                                                                                            background-color: #f9f9f9;
+                                                                                        }
+                                                                                        h1 {
+                                                                                            color: #333;
+                                                                                        }
+                                                                                        p {
+                                                                                            color: #666;
+                                                                                        }
+                                                                                        .button {
+                                                                                            display: inline-block;
+                                                                                            padding: 10px 20px;
+                                                                                            background-color: #4CAF50;
+                                                                                            color: white;
+                                                                                            text-decoration: none;
+                                                                                            border-radius: 5px;
+                                                                                        }
+                                                                                    </style>
+                                                                                </head>
+                                                                                <body>
+                                                                                    <div class="container">
+                                                                                        <h1>Informasi Pengiriman Data Konservasi Satwa dari Instansi Lestari</h1>
+                                                                                        <p>Salam sejahtera,</p>
+                                                                                        <p>Kami dari Instansi Lestari ingin memberitahu Anda bahwa data konservasi satwa yang Anda minta tidak dapat kami kirimkan karena suatu hal.</p>                                                                           
+                                                                                        <p>Terima kasih telah menggunakan layanan kami. Jika Anda memiliki pertanyaan lebih lanjut, jangan ragu untuk menghubungi kami di nomor yang tercantum di bawah ini atau melalui email.</p>
+                                                                                        <p>Salam hormat,</p>
+                                                                                        <p>Tim Lestari</p>
+                                                                                        <p>Contact: ${process.env.EMAIL} | Phone: <a href="${process.env.PHONE_WA}">${process.env.PHONE_FORMATTED}</a>  </p>  
+                                                                                    </div>
+                                                                                </body>
+                                                                                </html>
+                                                                                
+                                                        `
+                                }
+                                // async..await is not allowed in global scope, must use a wrapper
+                                async function main() {
+                                    // send mail with defined transport object
+                                    const info = await transporter.sendMail(msg);
+            
+                                    // console.log("Message sent: %s", info.messageId);
+                                    // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
+                                }
+                                main().catch(console.error);
+                                response.ok(rows, res)
+                            }
+
+
+                        }
+                    )
+
+                    
                 }
             });
     } else if (approve == 2) {
@@ -154,68 +244,73 @@ exports.websendrequestdata = function (req, res) {
                                                         console.log(error);
                                                         res.status(500).send("Failed to fetch data from animals table");
                                                     } else {
-                                                        // Header CSV
-                                                        let csv = Object.keys(rows[0]).join(',') + '\n';
 
-                                                        // Data CSV
-                                                        rows.forEach(row => {
-                                                            let values = Object.values(row);
-                                                            csv += values.map(value => {
-                                                                // Mengapa kita memeriksa tipe data? Karena jika nilai itu string dan mungkin mengandung koma, kita perlu mengapitnya dengan tanda kutip
-                                                                return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
-                                                            }).join(',') + '\n';
-                                                        });
+                                                        // Memeriksa apakah ada baris yang tampil dalam hasil query
+                                                        if (rows.length === 0) {
+                                                            res.status(400).send("There's no data in range");
+                                                        } else {
+                                                            // Header CSV
+                                                            let csv = Object.keys(rows[0]).join(',') + '\n';
 
-                                                        const fs = require('fs');
-                                                        const path = require('path');
-                                                        const rootDir = process.cwd(); // Mendapatkan direktori kerja saat ini
-                                                        const dataDir = path.join(rootDir, 'data'); // Menggabungkan dengan direktori 'data'
+                                                            // Data CSV
+                                                            rows.forEach(row => {
+                                                                let values = Object.values(row);
+                                                                csv += values.map(value => {
+                                                                    // Mengapa kita memeriksa tipe data? Karena jika nilai itu string dan mungkin mengandung koma, kita perlu mengapitnya dengan tanda kutip
+                                                                    return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
+                                                                }).join(',') + '\n';
+                                                            });
 
-                                                        let nowFile = new Date();
+                                                            const fs = require('fs');
+                                                            const path = require('path');
+                                                            const rootDir = process.cwd(); // Mendapatkan direktori kerja saat ini
+                                                            const dataDir = path.join(rootDir, 'data'); // Menggabungkan dengan direktori 'data'
 
-                                                        // Mendapatkan tanggal, bulan, dan tahun saat ini
-                                                        let yearFile = now.getFullYear();
-                                                        let monthFile = (nowFile.getMonth() + 1).toString().padStart(2, '0'); // Tambah 1 karena bulan dimulai dari 0
-                                                        let dateFile = nowFile.getDate().toString().padStart(2, '0');
+                                                            let nowFile = new Date();
 
-                                                        // Format tanggal sesuai dengan format yang diinginkan (yyyyMMdd)
-                                                        let formattedDate = `${yearFile}${monthFile}${dateFile}`;
-                                                        // Nama file berdasarkan variabel yang Anda sediakan
-                                                        const fileName = `${id_send_data}_${name}_${formattedDate}.csv`;
-                                                        const filePath = path.join(dataDir, fileName); // Gabungkan dengan nama file untuk mendapatkan path lengkap                                                        
+                                                            // Mendapatkan tanggal, bulan, dan tahun saat ini
+                                                            let yearFile = now.getFullYear();
+                                                            let monthFile = (nowFile.getMonth() + 1).toString().padStart(2, '0'); // Tambah 1 karena bulan dimulai dari 0
+                                                            let dateFile = nowFile.getDate().toString().padStart(2, '0');
 
-                                                        // Menyimpan data CSV ke file
-                                                        fs.writeFile(filePath, csv, (err) => {
-                                                            if (err) {
-                                                                console.error('Gagal menyimpan file:', err);
-                                                                res.status(500).send("Failed to save CSV file");
-                                                            } else {
-                                                                console.log(`File CSV berhasil disimpan di ${filePath}`);
+                                                            // Format tanggal sesuai dengan format yang diinginkan (yyyyMMdd)
+                                                            let formattedDate = `${yearFile}${monthFile}${dateFile}`;
+                                                            // Nama file berdasarkan variabel yang Anda sediakan
+                                                            const fileName = `${id_send_data}_${name}_${formattedDate}.csv`;
+                                                            const filePath = path.join(dataDir, fileName); // Gabungkan dengan nama file untuk mendapatkan path lengkap                                                        
 
-                                                                // Membuat URL file CSV
-                                                                const fileURL = `${process.env.BASE_URL}/v1/data/${fileName}`; // Gunakan path relatif
+                                                            // Menyimpan data CSV ke file
+                                                            fs.writeFile(filePath, csv, (err) => {
+                                                                if (err) {
+                                                                    console.error('Gagal menyimpan file:', err);
+                                                                    res.status(500).send("Failed to save CSV file");
+                                                                } else {
+                                                                    console.log(`File CSV berhasil disimpan di ${filePath}`);
 
-                                                                let day = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][now.getDay()];
-                                                                let month = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][now.getMonth()];
+                                                                    // Membuat URL file CSV
+                                                                    const fileURL = `${process.env.BASE_URL}/v1/data/${fileName}`; // Gunakan path relatif
 
-                                                                let formattedDateTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')} ${day}, ${now.getDate()} ${month} ${now.getFullYear()}`;
+                                                                    let day = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][now.getDay()];
+                                                                    let month = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][now.getMonth()];
 
-                                                                const transporter = nodemailer.createTransport({
-                                                                    service: 'gmail',
-                                                                    host: "smtp@gmail.com",
-                                                                    port: 587,
-                                                                    secure: false,
-                                                                    auth: {
-                                                                        user: process.env.EMAIL,
-                                                                        pass: process.env.PASSWORD,
-                                                                    },
-                                                                });
+                                                                    let formattedDateTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')} ${day}, ${now.getDate()} ${month} ${now.getFullYear()}`;
 
-                                                                const msg = {
-                                                                    from: '"Lestari" <main@lestari.com>', // sender address
-                                                                    to: `${email}`, // list of receivers
-                                                                    subject: "Data Datwa Liar", // Subject line                                                                    
-                                                                    html: `
+                                                                    const transporter = nodemailer.createTransport({
+                                                                        service: 'gmail',
+                                                                        host: "smtp@gmail.com",
+                                                                        port: 587,
+                                                                        secure: false,
+                                                                        auth: {
+                                                                            user: process.env.EMAIL,
+                                                                            pass: process.env.PASSWORD,
+                                                                        },
+                                                                    });
+
+                                                                    const msg = {
+                                                                        from: '"Lestari" <main@lestari.com>', // sender address
+                                                                        to: `${email}`, // list of receivers
+                                                                        subject: "Data Datwa Liar", // Subject line                                                                    
+                                                                        html: `
                                                                     <!DOCTYPE html>
                                                                     <html lang="en">
                                                                     <head>
@@ -278,32 +373,34 @@ exports.websendrequestdata = function (req, res) {
                                                                     </html>
                                                                     
                                             `
-                                                                }
-                                                                // async..await is not allowed in global scope, must use a wrapper
-                                                                async function main() {
-                                                                    // send mail with defined transport object
-                                                                    const info = await transporter.sendMail(msg);
-
-                                                                    // console.log("Message sent: %s", info.messageId);
-                                                                    // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
-                                                                }
-                                                                main().catch(console.error);
-                                                                const urldatabase = "/v1/data/${fileName}"
-                                                                // Menyimpan URL ke dalam tabel request_datas
-                                                                connection.query(`UPDATE request_datas SET url = ? WHERE id_request_data = ?`, [urldatabase, id_request_data], (error, result, fields) => {
-                                                                    if (error) {
-                                                                        console.log("Gagal menyimpan URL ke dalam tabel history_request_datas:", error);
-                                                                        res.status(500).send("Failed to update URL in history_request_datas table");
-                                                                    } else {
-                                                                        console.log("URL berhasil disimpan di tabel request_datas");
-
-                                                                        // Sisipkan kode pengiriman email di sini jika diperlukan
-                                                                        res.status(200).send("Data telah berhasil dikirim dan URL CSV telah disimpan.");
                                                                     }
-                                                                });
-                                                            }
-                                                        });
+                                                                    // async..await is not allowed in global scope, must use a wrapper
+                                                                    async function main() {
+                                                                        // send mail with defined transport object
+                                                                        const info = await transporter.sendMail(msg);
+
+                                                                        // console.log("Message sent: %s", info.messageId);
+                                                                        // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
+                                                                    }
+                                                                    main().catch(console.error);
+                                                                    const urldatabase = "/v1/data/${fileName}"
+                                                                    // Menyimpan URL ke dalam tabel request_datas
+                                                                    connection.query(`UPDATE request_datas SET url = ? WHERE id_request_data = ?`, [urldatabase, id_request_data], (error, result, fields) => {
+                                                                        if (error) {
+                                                                            console.log("Gagal menyimpan URL ke dalam tabel history_request_datas:", error);
+                                                                            res.status(500).send("Failed to update URL in history_request_datas table");
+                                                                        } else {
+                                                                            console.log("URL berhasil disimpan di tabel request_datas");
+
+                                                                            // Sisipkan kode pengiriman email di sini jika diperlukan
+                                                                            res.status(200).send("Data telah berhasil dikirim dan URL CSV telah disimpan.");
+                                                                        }
+                                                                    });
+                                                                }
+                                                            });
+                                                        }
                                                     }
+
                                                 });
                                             }
                                         });

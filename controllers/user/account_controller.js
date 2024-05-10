@@ -7,6 +7,8 @@ var response = require("../../res");
 var connection = require("../../connection");
 const verifikasi = require("../../middleware/verifikasi");
 var md5 = require("md5");
+const nodemailer = require("nodemailer");
+require('dotenv').config()
 
 exports.index = function (req, res) {
   response.ok("REST API Worked!", res);
@@ -310,4 +312,281 @@ exports.mobaccounteditpassword = function (req, res) {
       }
     }
   );
+};
+
+
+
+exports.mobforgotpassword = function (req, res) {
+  let email = req.body.email;
+  let otp = req.body.otp;
+
+  if (!otp && email) {
+    connection.query(`SELECT * FROM users WHERE email=?`, [email],
+      function (error, results, fields) {
+        if (error) {
+          console.log(error)
+        } else {
+          if (results.length == 0) {
+            res.status(400).send(`${email} Is Not User!`)
+          } else {
+            let otpcode = '';
+            for (let i = 0; i < 6; i++) {
+              otpcode += Math.floor(Math.random() * 10);
+            }
+            let currentTime = new Date();
+            let expired_at = new Date(currentTime.getTime() + 5 * 60000);
+            connection.query(`INSERT INTO otps(email,otp,expired_at) VALUES(?,?,?)`, [email, otpcode, expired_at],
+              function (error, rows, fields) {
+                if (error) {
+                  console.log(error)
+                } else {
+
+                  const transporter = nodemailer.createTransport({
+                    service: 'gmail',
+                    host: "smtp@gmail.com",
+                    port: 587,
+                    secure: false,
+                    auth: {
+                      user: process.env.EMAIL,
+                      pass: process.env.PASSWORD,
+                    },
+                  });
+
+                  const msg = {
+                    from: '"Lestari" <main@lestari.com>', // sender address
+                    to: `${email}`, // list of receivers
+                    subject: "Kode OTP Lestari", // Subject line                                                                    
+                    html: `
+                    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kode OTP Lestari</title>
+    <style>
+        /* Style email content */
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            color: #666;
+        }
+        .otp-code {
+            font-size: 24px; /* Ukuran font yang besar */
+            font-weight: bold; /* Tebal */
+            display: block; /* Membuat teks berada di tengah */
+            text-align: center; /* Pusatkan teks */
+            margin-bottom: 20px; /* Berikan jarak bawah */
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Verifikasi Akun</h1>
+        <p>Salam sejahtera,</p>
+        <p>Sebelum melakukan reset password pada akun Anda terlebih dahulu dengan memasukkan kode OTP berikut ini untuk menyelesaikan proses verifikasi pada akun Lestari kamu.</p>                            
+        <span class="otp-code">${otpcode}</span> 
+        <p><strong>Perhatian:</strong> Kode OTP hanya berlaku 5 menit dan bersifat rahasia. Mohon untuk tidak membagikan kode ini kepada siapapun termasuk pihak yang mengatasnamakan pihak Lestari.</p>
+        <p>Terima kasih telah menggunakan layanan kami. Jika Anda memiliki pertanyaan lebih lanjut, jangan ragu untuk menghubungi kami di nomor yang tercantum di bawah</p>
+        <p>Salam hormat,</p>
+        <p>Tim Lestari</p>
+        <p>Contact: ${process.env.EMAIL} | Phone: <a href="${process.env.PHONE_WA}">${process.env.PHONE_FORMATTED}</a>  </p>
+    </div>
+</body>
+</html>
+                    `
+                  }
+                  // async..await is not allowed in global scope, must use a wrapper
+                  async function main() {
+                    // send mail with defined transport object
+                    const info = await transporter.sendMail(msg);
+
+                    // console.log("Message sent: %s", info.messageId);
+                    // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
+                  }
+                  main().catch(console.error);
+
+                  response.ok(rows, res)
+                }
+              })
+          }
+
+        }
+      }
+    )
+
+
+  } else if (email && otp) {
+    connection.query(`SELECT * FROM users WHERE email=?`, [email],
+      function (error, results, fields) {
+        if (error) {
+          console.log(error)
+        } else {
+          if (results.length == 0) {
+            res.status(400).send(`${email} Is Not User!`)
+          } else {
+            connection.query(`SELECT * FROM otps WHERE email=? AND id_otp = (SELECT MAX(id_otp) FROM otps WHERE email=?)`,
+              [email, email],
+              function (error, results, fields) {
+                if (error) {
+                  console.log(error)
+                } else {
+
+                  let confirmation_used = results[0].used
+                  let confirmation_otp = results[0].otp
+                  let expired_at = results[0].expired_at
+                  let email = results[0].email
+                  let currentTime = new Date();
+
+                  if (confirmation_used == 1) {
+                    res.status(400).send("OTP Has Been Used!");
+                  } else if (confirmation_otp != otp) {
+                    res.status(400).send("OTP Incorrect!");
+                  } else if (currentTime > expired_at) {
+                    res.status(400).send("OTP Has Been Expired!");
+                  } else if (currentTime < expired_at) {
+                    connection.query(`UPDATE otps SET used=1 WHERE email=? AND id_otp = (SELECT MAX(id_otp) FROM otps WHERE email=?)`,
+                      [email, email],
+                      function (error, rows, fields) {
+                        if (error) {
+                          console.log(error)
+                        } else {
+                          let new_password = '';
+                          for (let i = 0; i < 6; i++) {
+                            new_password += Math.floor(Math.random() * 10);
+                          }
+                          connection.query(`UPDATE users SET password=? WHERE email=?`, [md5(new_password), email],
+                            function (error, rows, fields) {
+                              if (error) {
+                                console.log(error)
+                              } else {
+
+                                let now = new Date();
+                                let day = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][now.getDay()];
+                                let month = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][now.getMonth()];
+
+                                let formattedDateTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')} ${day}, ${now.getDate()} ${month} ${now.getFullYear()}`;
+
+
+                                const transporter = nodemailer.createTransport({
+                                  service: 'gmail',
+                                  host: "smtp@gmail.com",
+                                  port: 587,
+                                  secure: false,
+                                  auth: {
+                                    user: process.env.EMAIL,
+                                    pass: process.env.PASSWORD,
+                                  },
+                                });
+              
+                                const msg = {
+                                  from: '"Lestari" <main@lestari.com>', 
+                                  to: `${email}`, 
+                                  subject: "Reset Password", 
+                                  html: `
+                                  <!DOCTYPE html>
+              <html lang="en">
+              <head>
+                  <meta charset="UTF-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <title>Reset Password</title>
+                  <style>
+                      /* Style email content */
+                      body {
+                          font-family: Arial, sans-serif;
+                          line-height: 1.6;
+                      }
+                      .container {
+                          max-width: 600px;
+                          margin: auto;
+                          padding: 20px;
+                          border: 1px solid #ccc;
+                          border-radius: 5px;
+                          background-color: #f9f9f9;
+                      }
+                      h1 {
+                          color: #333;
+                      }
+                      p {
+                          color: #666;
+                      }
+                      .otp-code {
+                          font-size: 24px; /* Ukuran font yang besar */
+                          font-weight: bold; /* Tebal */
+                          display: block; /* Membuat teks berada di tengah */
+                          text-align: center; /* Pusatkan teks */
+                          margin-bottom: 20px; /* Berikan jarak bawah */
+                      }
+                      .button {
+                          display: inline-block;
+                          padding: 10px 20px;
+                          background-color: #4CAF50;
+                          color: white;
+                          text-decoration: none;
+                          border-radius: 5px;
+                      }
+                  </style>
+              </head>
+              <body>
+                  <div class="container">
+                      <h1>Reset Password</h1>
+                      <p>Salam sejahtera,</p>
+                      <p>Kami dari Instansi Lestari ingin memberitahu Anda bahwa reset password pada akun anda telah berhasil. Berikut adalah akun anda yang baru:</p>
+                      <ul>
+                                                                        <li><strong>Tanggal Reset Password:</strong> ${formattedDateTime}</li>                                                                                                                                                                                                                                         
+                                                                        <li><strong>Email:</strong> ${email}</li>
+                                                                        <li><strong>Password:</strong> ${new_password}</li>
+                                                                    </ul>
+                      <p><strong>Perhatian:</strong> Password harap segera diganti untuk keamanan akun Anda.</p>
+                      <p>Terima kasih telah menggunakan layanan kami. Jika Anda memiliki pertanyaan lebih lanjut, jangan ragu untuk menghubungi kami di nomor yang tercantum di bawah</p>
+                      <p>Salam hormat,</p>
+                      <p>Tim Lestari</p>
+                      <p>Contact: ${process.env.EMAIL} | Phone: <a href="${process.env.PHONE_WA}">${process.env.PHONE_FORMATTED}</a>  </p>
+                  </div>
+              </body>
+              </html>
+                                  `
+                                }
+
+                                async function main() {
+                                  
+                                  const info = await transporter.sendMail(msg);
+              
+                                  
+                                }
+                                main().catch(console.error);
+              
+                                response.ok(rows, res)
+                              }
+                            })
+                        }
+                      })
+                  }
+                }
+              })
+          }
+        }
+      })
+
+  } else { res.status(400).send("Insert Email!"); }
 };
