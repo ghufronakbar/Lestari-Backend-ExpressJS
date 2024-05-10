@@ -288,8 +288,9 @@ exports.websendrequestdata = function (req, res) {
                                                                     // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
                                                                 }
                                                                 main().catch(console.error);
+                                                                const urldatabase = "/v1/data/${fileName}"
                                                                 // Menyimpan URL ke dalam tabel request_datas
-                                                                connection.query(`UPDATE request_datas SET url = ? WHERE id_request_data = ?`, [fileURL, id_request_data], (error, result, fields) => {
+                                                                connection.query(`UPDATE request_datas SET url = ? WHERE id_request_data = ?`, [urldatabase, id_request_data], (error, result, fields) => {
                                                                     if (error) {
                                                                         console.log("Gagal menyimpan URL ke dalam tabel history_request_datas:", error);
                                                                         res.status(500).send("Failed to update URL in history_request_datas table");

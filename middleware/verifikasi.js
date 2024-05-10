@@ -14,7 +14,13 @@ function verifikasi(token) {
             .status(401)
             .send({ auth: false, message: "Token tidak terdaftar!" });
         } else {
-          console.log(decoded);
+          // Cek waktu kadaluarsa token
+          const currentTime = Math.floor(Date.now() / 1000); // Waktu saat ini dalam detik
+          if (decoded.exp && decoded.exp < currentTime) {
+            return res
+              .status(401)
+              .send({ auth: false, message: "Token telah kadaluarsa!" });
+          }
           req.decoded = decoded; // Menyimpan data decoded ke dalam req untuk penggunaan selanjutnya
           next(); // Lanjutkan ke middleware/route selanjutnya
         }

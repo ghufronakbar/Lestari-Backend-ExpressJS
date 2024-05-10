@@ -75,7 +75,7 @@ exports.login = function (req, res) {
       if (rows.length == 1) {
         var id_user = rows[0].id_user;
         var token = jwt.sign({ id_user }, config.secret, {
-          expiresIn: 1440,
+          expiresIn: 43200,
         });
 
         // Hapus token lama sebelum memperbarui dengan yang baru
@@ -115,7 +115,7 @@ exports.login = function (req, res) {
         });
       } else {
         console.log(query);
-        res.json({
+        res.status(404).json({
           Error: true,
           Message: "Email atau Password Salah!",
         });

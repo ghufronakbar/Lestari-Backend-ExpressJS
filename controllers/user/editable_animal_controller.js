@@ -53,8 +53,7 @@ exports.mobeditableanimals = function (req, res) {
 //GET ID EDITABLE ANIMAL -DONE
 exports.mobeditableanimalid = function (req, res) {
   let today = new Date();
-  let sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-  let formattedDate = sevenDaysAgo.toISOString().slice(0, 10);
+
   let token = req.params.token;
   let id_animal = req.params.id_animal;
   console.log(id_animal);
@@ -63,12 +62,13 @@ exports.mobeditableanimalid = function (req, res) {
     var id_user = req.decoded.id_user;
     connection.query(
       `SELECT * FROM animals 
-                        WHERE date >= ? AND id_user=? AND id_animal=?`,
-      [formattedDate, id_user, id_animal],
+                        WHERE id_user=? AND id_animal=?`,
+      [id_user, id_animal],
       function (error, rows, fields) {
         if (error) {
           console.log(error);
         } else {
+          console.log("cekid",rows)
           response.ok(rows, res);
         }
       }
@@ -291,7 +291,7 @@ exports.mob_upload_image = function (req, res) {
       // var nama = req.file.filename;
       res.json({
         success: 200,
-        image_url: `http://192.168.0.118:5000/v1/mob/image/${req.file.filename}`,
+        image_url: `/v1/mob/image/${req.file.filename}`,
       });
     });
   });

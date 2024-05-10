@@ -34,6 +34,54 @@ exports.mobaccount = function (req, res) {
   });
 };
 
+exports.mobregisteruser = function (req, res) {
+  let userName = req.body.name;
+  let email = req.body.email;
+  let phone = req.body.phone;
+  let profession = req.body.profession;
+  let instances = req.body.instances;
+  let subject = req.body.kepentingan;
+  let body = req.body.deskripsi;
+  let now = new Date();
+  let date_now =
+    now.getFullYear() +
+    "-" +
+    ("0" + (now.getMonth() + 1)).slice(-2) +
+    "-" +
+    ("0" + now.getDate()).slice(-2) +
+    " " +
+    ("0" + now.getHours()).slice(-2) +
+    ":" +
+    ("0" + now.getMinutes()).slice(-2) +
+    ":" +
+    ("0" + now.getSeconds()).slice(-2);
+  connection.query(
+    `INSERT INTO request_accounts 
+                    (name, email, phone, profession, instances, subject, body, date, approve) 
+                    VALUES (?,?,?,?,?,?,?,?,?)`,
+    [
+      userName,
+      email,
+      phone,
+      profession,
+      instances,
+      subject,
+      body,
+      date_now,
+      1, // Default value for approve set to 1
+    ],
+    function (error, rows, fields) {
+      if (error) {
+        console.log(error);
+        res.status(500).json({ error: "Internal Server Error" });
+      } else {
+        res.status(200).json({ keterangan: "berhasil menambah data" });
+      }
+    }
+  );
+};
+
+
 //EDIT ACCOUNT NAME
 exports.mobaccounteditname = function (req, res) {
   let name = req.body.name;
@@ -159,7 +207,7 @@ exports.mob_update_profile = function (req, res) {
             }
             res.json({
               success: 200,
-              image_url: `http://192.168.1.22:5000/v1/mob/image/profile/${req.file.filename}`,
+              image_url: `/v1/mob/image/profile/${req.file.filename}`,
             });
           });
           //   response.ok(rows, res);

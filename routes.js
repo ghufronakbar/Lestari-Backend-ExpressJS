@@ -67,12 +67,10 @@ module.exports = function (app) {
     .route("/v1/mob/animals/editable/:token")
     .get(apiUser.editable_animal_controller.mobeditableanimals);
 
+  app.route("/v1/mob/user/check/:token").get(apiUser.auth.check_user);
+
   app
-    .route("/v1/mob/user/check/:token")
-    .get(apiUser.auth.check_user);
-    
-  app
-    .route("/v1/mob/animal/editable/:token/:id_animal")
+    .route("/v1/mob/animal/:token/:id_animal")
     .get(apiUser.editable_animal_controller.mobeditableanimalid);
 
   app
@@ -118,4 +116,30 @@ module.exports = function (app) {
   app
     .route("/v1/mob/user/account/edit/password/:token")
     .put(apiUser.account_controller.mobaccounteditpassword);
+
+
+
+  app
+    .route("/v1/mob/user/request-datas/:token")
+    .get(apiUser.request_data_controller.mobhistoryrequestdata);
+  app
+    .route("/v1/mob/user/request-data/:token/:id_request_data")
+    .get(apiUser.request_data_controller.mobhistoryrequestdatabyid);
+  app
+    .route("/v1/mob/user/request-data/add")
+    .post(apiUser.request_data_controller.mobaddrequestdata);
+
+
+
+
+
+
+
+
+
+
+
+  app
+    .route("/v1/mob/user/register")
+    .post(apiUser.account_controller.mobregisteruser);
 };
