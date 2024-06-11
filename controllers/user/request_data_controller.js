@@ -28,7 +28,22 @@ exports.mobhistoryrequestdata = function (req, res) {
           console.log(error);
           res.status(500).send("Internal Server Error");
         } else {
-          response.ok(rows, res);
+          let result = []
+          rows.forEach(row => {
+            result.push({
+              id_request_data: row.id_request_data,
+              name: row.name,
+              email: row.email,
+              profession: row.profession,
+              instances: row.instances,
+              subject: row.subject,
+              body: row.body,
+              date: row.date,
+              approve: row.approve,
+              url: process.env.BASE_URL + `/v1/mob/data/` + row.url,
+            })
+          });
+          return res.status(200).json({ status: 200, values: result })
         }
       }
     );
@@ -50,7 +65,22 @@ exports.mobhistoryrequestdatabyid = function (req, res) {
           console.log(error);
           res.status(500).send("Internal Server Error");
         } else {
-          response.ok(rows, res);
+          let result = []
+          rows.forEach(row => {
+            result.push({
+              id_request_data: row.id_request_data,
+              name: row.name,
+              email: row.email,
+              profession: row.profession,
+              instances: row.instances,
+              subject: row.subject,
+              body: row.body,
+              date: row.date,
+              approve: row.approve,
+              url: process.env.BASE_URL + `/v1/mob/data/` + row.url,
+            })
+          });
+          return res.status(200).json({ status: 200, values: result })
         }
       }
     );
