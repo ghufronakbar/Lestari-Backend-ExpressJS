@@ -9,20 +9,44 @@ exports.index = function (req, res) {
 }
 
 //GET ANIMALS
-exports.webanimals = function (req, res) {
+exports.webanimals = async (req, res) => {
     connection.query(`SELECT animals.id_animal, animals.local_name, animals.latin_name, 
                         animals.habitat, animals.description, animals.city, animals.longitude, 
                         animals.latitude, animals.image, animals.amount, users.id_user, users.name, 
-                        users.email, animals.date, animals.updated_at, users.picture AS user_picture,users.phone FROM animals JOIN users 
-                        WHERE animals.id_user = users.id_user`,
-        function (error, rows, fields) {
+                        users.email, animals.date, animals.updated_at, users.picture AS user_picture, users.phone 
+                        FROM animals 
+                        JOIN users ON animals.id_user = users.id_user`,
+        (error, rows, fields) => {
             if (error) {
-                console.log(error)
+                console.log(error);
+                return res.status(500).json({ status: 500, message: 'Internal Server Error' });
             } else {
-                response.ok(rows, res)
+                let results = [];
+                rows.forEach(row => {
+                    results.push({
+                        id_animal: row.id_animal,
+                        local_name: row.local_name,
+                        latin_name: row.latin_name,
+                        habitat: row.habitat,
+                        description: row.description,
+                        city: row.city,
+                        longitude: row.longitude,
+                        latitude: row.latitude,
+                        image: row.image? process.env.BASE_URL + `/v1/mob/image/animal/` + row.image : process.env.BASE_URL + `/v1/mob/image/default/picture.webp` ,
+                        amount: row.amount,
+                        id_user: row.id_user,
+                        name: row.name,
+                        email: row.email,
+                        user_picture: row.user_picture? process.env.BASE_URL + `/v1/mob/image/profile/` + row.user_picture : process.env.BASE_URL + `/v1/mob/image/default/picture.webp` ,
+                        phone: row.phone,
+                        date: row.date,
+                        updated_at: row.updated_at
+                    });
+                });
+                return res.status(200).json({ status: 200, values: results });
             };
         }
-    )
+    );
 };
 
 //GET ID ANIMAL
@@ -36,8 +60,30 @@ exports.webanimalid = function (req, res) {
         function (error, rows, fields) {
             if (error) {
                 console.log(error)
-            } else {
-                response.ok(rows, res)
+            } else {               
+                let results = [];
+                rows.forEach(row => {
+                    results.push({
+                        id_animal: row.id_animal,
+                        local_name: row.local_name,
+                        latin_name: row.latin_name,
+                        habitat: row.habitat,
+                        description: row.description,
+                        city: row.city,
+                        longitude: row.longitude,
+                        latitude: row.latitude,
+                        image: row.image? process.env.BASE_URL + `/v1/mob/image/animal/` + row.image : process.env.BASE_URL + `/v1/mob/image/default/picture.webp` ,
+                        amount: row.amount,
+                        id_user: row.id_user,
+                        name: row.name,
+                        email: row.email,
+                        user_picture: row.user_picture? process.env.BASE_URL + `/v1/mob/image/profile/` + row.user_picture : process.env.BASE_URL + `/v1/mob/image/default/picture.webp` ,
+                        phone: row.phone,
+                        date: row.date,
+                        updated_at: row.updated_at
+                    });
+                });
+                return res.status(200).json({ status: 200, values: results });            
             };
         }
     )

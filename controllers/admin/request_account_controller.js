@@ -43,7 +43,7 @@ exports.webrequestaccountid = function (req, res) {
 exports.webapproverequestaccount = function (req, res) {
     let approve = req.body.approve;
     let id = req.params.id;
-    connection.query(`SELECT * FROM request_accounts WHERE id_request_account=?`,[id],
+    connection.query(`SELECT * FROM request_accounts WHERE id_request_account=?`, [id],
         function (error, result, fields) {
             if (error) {
                 console.log(error)
@@ -239,7 +239,7 @@ exports.webapproverequestaccount = function (req, res) {
                                                                     <p>Salam hormat,</p>
                                                                     <p>Tim Lestari</p>
                                                                     <p>Contact: ${process.env.EMAIL} | Phone: <a href="${process.env.PHONE_WA}">${process.env.PHONE_FORMATTED}</a>  </p>
-                                                            w
+                                                            
                                                                                 
                                                         `
                                                         }
@@ -252,7 +252,7 @@ exports.webapproverequestaccount = function (req, res) {
                                                             // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
                                                         }
                                                         main().catch(console.error);
-                                                       
+
                                                         response.ok(rows, res)
                                                     }
                                                 });
@@ -263,11 +263,8 @@ exports.webapproverequestaccount = function (req, res) {
                                 });
                             }
                         });
-
                 }
             }
         }
     )
-
-
 };

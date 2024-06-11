@@ -51,11 +51,11 @@ exports.webapproverequestdata = function (req, res) {
                 if (error) {
                     console.log(error);
                 } else {
-                    connection.query(`SELECT * FROM request_datas WHERE id_request_data=?`,[id],
-                        function(error,results,fields){
-                            if(error){
+                    connection.query(`SELECT * FROM request_datas WHERE id_request_data=?`, [id],
+                        function (error, results, fields) {
+                            if (error) {
                                 console.log(error)
-                            }else{
+                            } else {
                                 let email = results[0].email
 
                                 const transporter = nodemailer.createTransport({
@@ -68,7 +68,7 @@ exports.webapproverequestdata = function (req, res) {
                                         pass: process.env.PASSWORD,
                                     },
                                 });
-            
+
                                 const msg = {
                                     from: '"Lestari" <main@lestari.com>', // sender address
                                     to: `${email}`, // list of receivers
@@ -129,7 +129,7 @@ exports.webapproverequestdata = function (req, res) {
                                 async function main() {
                                     // send mail with defined transport object
                                     const info = await transporter.sendMail(msg);
-            
+
                                     // console.log("Message sent: %s", info.messageId);
                                     // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
                                 }
@@ -141,7 +141,7 @@ exports.webapproverequestdata = function (req, res) {
                         }
                     )
 
-                    
+
                 }
             });
     } else if (approve == 2) {
@@ -249,11 +249,25 @@ exports.websendrequestdata = function (req, res) {
                                                         if (rows.length === 0) {
                                                             res.status(400).send("There's no data in range");
                                                         } else {
+                                                            let result = []
+                                                            rows.forEach(row => {
+                                                                result.push({
+                                                                    local_name: row.local_name,
+                                                                    latin_name: row.latin_name,
+                                                                    habitat: row.habitat,
+                                                                    description: row.description,
+                                                                    city: row.city,
+                                                                    longitude: row.longitude,
+                                                                    latitude: row.latitude,
+                                                                    amount: row.amount,
+                                                                    image: row.image ? process.env.BASE_URL + `/v1/mob/image/animal/` + row.image : process.env.BASE_URL + `/v1/mob/image/default/picture.webp`,
+                                                                })
+                                                            });
                                                             // Header CSV
                                                             let csv = Object.keys(rows[0]).join(',') + '\n';
 
                                                             // Data CSV
-                                                            rows.forEach(row => {
+                                                            result.forEach(row => {
                                                                 let values = Object.values(row);
                                                                 csv += values.map(value => {
                                                                     // Mengapa kita memeriksa tipe data? Karena jika nilai itu string dan mungkin mengandung koma, kita perlu mengapitnya dengan tanda kutip
@@ -264,7 +278,7 @@ exports.websendrequestdata = function (req, res) {
                                                             const fs = require('fs');
                                                             const path = require('path');
                                                             const rootDir = process.cwd(); // Mendapatkan direktori kerja saat ini
-                                                            const dataDir = path.join(rootDir, 'data'); // Menggabungkan dengan direktori 'data'
+                                                            const dataDir = path.join(rootDir, 'upload/data'); // Menggabungkan dengan direktori 'data'
 
                                                             let nowFile = new Date();
 
@@ -288,7 +302,7 @@ exports.websendrequestdata = function (req, res) {
                                                                     console.log(`File CSV berhasil disimpan di ${filePath}`);
 
                                                                     // Membuat URL file CSV
-                                                                    const fileURL = `${process.env.BASE_URL}/v1/data/${fileName}`; // Gunakan path relatif
+                                                                    const fileURL = `${process.env.BASE_URL}/v1/mob/data/${fileName}`; // Gunakan path relatif
 
                                                                     let day = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][now.getDay()];
                                                                     let month = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][now.getMonth()];
@@ -364,10 +378,8 @@ exports.websendrequestdata = function (req, res) {
                                                                             <p>Tim Lestari</p>
                                                                             <p>Contact: ${process.env.EMAIL} | Phone: <a href="${process.env.PHONE_WA}">${process.env.PHONE_FORMATTED}</a>  </p>
                                                                     
-                                                                            <!-- Tombol untuk mengunduh file -->
                                                                             <a href="${fileURL}" class="button">Unduh Data</a>
                                                                            
-                                                                          
                                                                         </div>
                                                                     </body>
                                                                     </html>
@@ -383,9 +395,8 @@ exports.websendrequestdata = function (req, res) {
                                                                         // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
                                                                     }
                                                                     main().catch(console.error);
-                                                                    const urldatabase = "/v1/data/${fileName}"
                                                                     // Menyimpan URL ke dalam tabel request_datas
-                                                                    connection.query(`UPDATE request_datas SET url = ? WHERE id_request_data = ?`, [urldatabase, id_request_data], (error, result, fields) => {
+                                                                    connection.query(`UPDATE request_datas SET url = ? WHERE id_request_data = ?`, [fileName, id_request_data], (error, result, fields) => {
                                                                         if (error) {
                                                                             console.log("Gagal menyimpan URL ke dalam tabel history_request_datas:", error);
                                                                             res.status(500).send("Failed to update URL in history_request_datas table");
