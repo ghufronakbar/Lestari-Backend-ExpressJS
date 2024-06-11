@@ -29,7 +29,17 @@ exports.mobaccount = function (req, res) {
           console.log(error);
           res.status(500).send("Internal Server Error");
         } else {
-          response.ok(rows, res);
+          let results = [];
+          rows.forEach(row => {
+            results.push({
+              id_user: row.id_user,
+              email: row.email,
+              name: row.name,
+              phone: row.phone,
+              picture: row.picture ? process.env.BASE_URL + `/v1/mob/image/profile/` + row.picture : process.env.BASE_URL + `/v1/mob/image/default/picture.webp`,
+            })
+          })
+          return res.status(200).json({ status: 200, values: results });
         }
       }
     );
@@ -216,7 +226,7 @@ exports.mob_update_profile = function (req, res) {
             "..",
             "..",
             "upload",
-            "images"
+            "profiles"
           );
 
           // Menggunakan modul url untuk mengurai URL
@@ -255,7 +265,7 @@ exports.mob_update_profile = function (req, res) {
             }
             res.json({
               success: 200,
-              image_url: `/v1/mob/image/profile/${req.file.filename}`,
+              image_url: req.file.filename,
             });
           });
           //   response.ok(rows, res);
@@ -498,11 +508,11 @@ exports.mobforgotpassword = function (req, res) {
                                     pass: process.env.PASSWORD,
                                   },
                                 });
-              
+
                                 const msg = {
-                                  from: '"Lestari" <main@lestari.com>', 
-                                  to: `${email}`, 
-                                  subject: "Reset Password", 
+                                  from: '"Lestari" <main@lestari.com>',
+                                  to: `${email}`,
+                                  subject: "Reset Password",
                                   html: `
                                   <!DOCTYPE html>
               <html lang="en">
@@ -569,13 +579,13 @@ exports.mobforgotpassword = function (req, res) {
                                 }
 
                                 async function main() {
-                                  
+
                                   const info = await transporter.sendMail(msg);
-              
-                                  
+
+
                                 }
                                 main().catch(console.error);
-              
+
                                 response.ok(rows, res)
                               }
                             })

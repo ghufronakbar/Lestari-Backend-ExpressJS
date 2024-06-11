@@ -43,7 +43,22 @@ exports.mobeditableanimals = function (req, res) {
           console.log(error);
           res.status(500).send("Internal Server Error");
         } else {
-          response.ok(rows, res);
+          let results = [];
+          rows.forEach(row => {
+            results.push({
+              id_animal: row.id_animal,
+              local_name: row.local_name,
+              latin_name: row.latin_name,
+              habitat: row.habitat,
+              description: row.description,
+              city: row.city,
+              longitude: row.longitude,
+              latitude: row.latitude,
+              image: row.image ? process.env.BASE_URL + `/v1/mob/image/animal/` + row.image : process.env.BASE_URL + `/v1/mob/image/default/picture.webp`,
+              amount: row.amount,
+            });
+          });
+          return res.status(200).json({ status: 200, values: results });
         }
       }
     );
@@ -68,8 +83,25 @@ exports.mobeditableanimalid = function (req, res) {
         if (error) {
           console.log(error);
         } else {
-          console.log("cekid",rows)
-          response.ok(rows, res);
+          let results = [];
+          rows.forEach(row => {
+            results.push({
+              id_animal: row.id_animal,
+              local_name: row.local_name,
+              latin_name: row.latin_name,
+              habitat: row.habitat,
+              description: row.description,
+              city: row.city,
+              longitude: row.longitude,
+              latitude: row.latitude,
+              image: row.image ? process.env.BASE_URL + `/v1/mob/image/animal/` + row.image : process.env.BASE_URL + `/v1/mob/image/default/picture.webp`,
+              amount: row.amount,
+              id_user: row.id_user,
+              data: row.date,
+              updated_at: row.updated_at
+            });
+          });
+          return res.status(200).json({ status: 200, values: results });
         }
       }
     );
@@ -151,7 +183,7 @@ exports.deleteAnimalById = function (req, res) {
           var url = rows[0].image;
           var filename = url.substring(url.lastIndexOf("/") + 1);
 
-          const imagePath = path.join("upload/images", filename);
+          const imagePath = path.join("upload/animals", filename);
 
           console.log("CEKLAH", imagePath);
 
@@ -254,7 +286,7 @@ exports.mob_upload_image = function (req, res) {
 
     // storage engine
     const storage = multer.diskStorage({
-      destination: "./upload/images",
+      destination: "./upload/animals",
       filename: (req, file, cb) => {
         return cb(
           null,
@@ -291,7 +323,7 @@ exports.mob_upload_image = function (req, res) {
       // var nama = req.file.filename;
       res.json({
         success: 200,
-        image_url: `/v1/mob/image/${req.file.filename}`,
+        image_url: req.file.filename
       });
     });
   });
@@ -309,7 +341,7 @@ exports.deleteImageByURL = function (req, res) {
       "..",
       "..",
       "upload",
-      "images"
+      "animals"
     );
 
     // Menggunakan modul url untuk mengurai URL

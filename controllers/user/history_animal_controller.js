@@ -33,7 +33,19 @@ exports.mobhistoryanimals = function (req, res) {
           console.log(error);
           res.status(500).send("Internal Server Error");
         } else {
-          response.ok(rows, res);
+          let results = [];
+          rows.forEach(row => {
+            results.push({
+              id_animal: row.id_animal,
+              local_name: row.local_name,
+              latin_name: row.latin_name,
+              image: row.image ? process.env.BASE_URL + `/v1/mob/image/animal/` + row.image : process.env.BASE_URL + `/v1/mob/image/default/picture.webp`,
+              city: row.city,
+              longitude: row.longitude,
+              latitude: row.latitude,
+            });
+          });
+          return res.status(200).json({ status: 200, values: results });
         }
       }
     );
@@ -45,16 +57,33 @@ exports.mobhistoryanimalid = function (req, res) {
   let token = req.params.token;
   let id_animal = req.params.id_animal;
   connection.query(
-    `SELECT * FROM animals 
-                        WHERE id_user=?
-                        AND id_animal=?`,
-    [token, id_animal],
+    `SELECT * FROM animals WHERE
+                      id_animal=?`,
+    [id_animal],
     function (error, rows, fields) {
       if (error) {
         console.log(error);
         res.status(500).send("Internal Server Error");
       } else {
-        response.ok(rows, res);
+        let results = [];
+        rows.forEach(row => {
+          results.push({
+            id_animal: row.id_animal,
+            local_name: row.local_name,
+            latin_name: row.latin_name,
+            habitat: row.habitat,
+            description: row.description,
+            city: row.city,
+            longitude: row.longitude,
+            latitude: row.latitude,
+            image: row.image ? process.env.BASE_URL + `/v1/mob/image/animal/` + row.image : process.env.BASE_URL + `/v1/mob/image/default/picture.webp`,
+            amount: row.amount,
+            id_user: row.id_user,
+            data: row.date,
+            updated_at: row.updated_at
+          });
+        });
+        return res.status(200).json({ status: 200, values: results });
       }
     }
   );
