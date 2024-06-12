@@ -8,7 +8,7 @@ var connection = require("../../connection");
 const verifikasi = require("../../middleware/verifikasi");
 var md5 = require("md5");
 const nodemailer = require("nodemailer");
-require('dotenv').config()
+require("dotenv").config();
 
 exports.index = function (req, res) {
   response.ok("REST API Worked!", res);
@@ -30,15 +30,17 @@ exports.mobaccount = function (req, res) {
           res.status(500).send("Internal Server Error");
         } else {
           let results = [];
-          rows.forEach(row => {
+          rows.forEach((row) => {
             results.push({
               id_user: row.id_user,
               email: row.email,
               name: row.name,
               phone: row.phone,
-              picture: row.picture ? process.env.BASE_URL + `/v1/mob/image/profile/` + row.picture : process.env.BASE_URL + `/v1/mob/image/default/picture.webp`,
-            })
-          })
+              picture: row.picture
+                ? process.env.BASE_URL + `/v1/mob/image/profile/` + row.picture
+                : process.env.BASE_URL + `/v1/mob/image/default/picture.webp`,
+            });
+          });
           return res.status(200).json({ status: 200, values: results });
         }
       }
@@ -210,66 +212,91 @@ exports.mob_update_profile = function (req, res) {
   let token = req.params.token;
   console.log(token);
   verifikasi(token)(req, res, function () {
-    var id_user = req.decoded.id_user;
+    const id_user = req.decoded.id_user;
+
     connection.query(
-      `SELECT picture FROM users 
-                        WHERE id_user=?`,
+      `SELECT picture, name FROM users WHERE id_user=?`,
       [id_user],
-      function (error, rows, fields) {
+      function (error, rows) {
         if (error) {
           console.log(error);
-          res.status(500).send("Internal Server Error");
-        } else {
-          console.log("cek ", rows[0].picture);
-          const uploadDirectory = path.join(
-            __dirname,
-            "..",
-            "..",
-            "upload",
-            "profiles"
-          );
+          return res.status(500).send("Internal Server Error");
+        }
 
+        if (rows.length === 0) {
+          return res.status(404).send("User not found");
+        }
+
+        console.log("cek data", rows[0].name);
+        const user = rows[0];
+
+        const uploadDirectory = path.join(
+          __dirname,
+          "..",
+          "..",
+          "upload",
+          "profiles"
+        );
+
+        let fileName;
+        if (user.picture) {
           // Menggunakan modul url untuk mengurai URL
-          const parsedUrl = url.parse(rows[0].picture);
-
+          const parsedUrl = url.parse(user.picture);
           // Menggunakan modul path untuk mendapatkan nama file dari path
-          const fileName = path.basename(parsedUrl.pathname);
-          console.log(fileName);
-          // storage engine
-          const storage = multer.diskStorage({
-            destination: "./upload/profile",
-            filename: (req, file, cb) => {
-              return cb(null, fileName);
-            },
-          });
+          fileName = path.basename(parsedUrl.pathname);
+        } else {
+          // Jika gambar tidak ada atau null, generate nama file baru
+          const datetime = new Date().toISOString().replace(/[-T:\.Z]/g, "");
+          fileName = `${user.name}_${datetime}.jpg`;
+        }
 
-          const upload = multer({
-            storage: storage,
-            limits: {
-              fileSize: 10 * 1024 * 1024, // 10 MB (dalam bytes)
-            },
-          }).single("image");
-          upload(req, res, function (err) {
-            if (err instanceof multer.MulterError) {
-              // Jika terjadi kesalahan dari multer (misalnya melebihi batas ukuran file)
-              return res.json({
-                success: 0,
-                message: err.message,
-              });
-            } else if (err) {
-              // Jika terjadi kesalahan lainnya
-              return res.json({
-                success: 0,
-                message: "Terjadi kesalahan saat mengunggah gambar",
+        // storage engine
+        const storage = multer.diskStorage({
+          destination: uploadDirectory,
+          filename: (req, file, cb) => {
+            cb(null, fileName);
+          },
+        });
+
+        const upload = multer({
+          storage: storage,
+          limits: {
+            fileSize: 10 * 1024 * 1024, // 10 MB (dalam bytes)
+          },
+        }).single("image");
+
+        upload(req, res, function (err) {
+          if (err instanceof multer.MulterError) {
+            // Jika terjadi kesalahan dari multer (misalnya melebihi batas ukuran file)
+            return res.json({
+              success: 0,
+              message: err.message,
+            });
+          } else if (err) {
+            // Jika terjadi kesalahan lainnya
+            return res.json({
+              success: 0,
+              message: "Terjadi kesalahan saat mengunggah gambar",
+            });
+          }
+
+          // Update database dengan nama file baru
+          connection.query(
+            `UPDATE users SET picture=? WHERE id_user=?`,
+            [fileName, id_user],
+            (error) => {
+              if (error) {
+                console.log(error);
+                return res.status(500).send("Internal Server Error");
+              }
+
+              res.json({
+                success: 200,
+                image_url: fileName,
               });
             }
-            res.json({
-              success: 200,
-              image_url: req.file.filename,
-            });
-          });
-          //   response.ok(rows, res);
-        }
+          );
+        });
       }
     );
   });
@@ -324,35 +351,36 @@ exports.mobaccounteditpassword = function (req, res) {
   );
 };
 
-
-
 exports.mobforgotpassword = function (req, res) {
   let email = req.body.email;
   let otp = req.body.otp;
 
   if (!otp && email) {
-    connection.query(`SELECT * FROM users WHERE email=?`, [email],
+    connection.query(
+      `SELECT * FROM users WHERE email=?`,
+      [email],
       function (error, results, fields) {
         if (error) {
-          console.log(error)
+          console.log(error);
         } else {
           if (results.length == 0) {
-            res.status(400).send(`${email} Is Not User!`)
+            res.status(400).send(`${email} Is Not User!`);
           } else {
-            let otpcode = '';
+            let otpcode = "";
             for (let i = 0; i < 6; i++) {
               otpcode += Math.floor(Math.random() * 10);
             }
             let currentTime = new Date();
             let expired_at = new Date(currentTime.getTime() + 5 * 60000);
-            connection.query(`INSERT INTO otps(email,otp,expired_at) VALUES(?,?,?)`, [email, otpcode, expired_at],
+            connection.query(
+              `INSERT INTO otps(email,otp,expired_at) VALUES(?,?,?)`,
+              [email, otpcode, expired_at],
               function (error, rows, fields) {
                 if (error) {
-                  console.log(error)
+                  console.log(error);
                 } else {
-
                   const transporter = nodemailer.createTransport({
-                    service: 'gmail',
+                    service: "gmail",
                     host: "smtp@gmail.com",
                     port: 587,
                     secure: false,
@@ -365,7 +393,7 @@ exports.mobforgotpassword = function (req, res) {
                   const msg = {
                     from: '"Lestari" <main@lestari.com>', // sender address
                     to: `${email}`, // list of receivers
-                    subject: "Kode OTP Lestari", // Subject line                                                                    
+                    subject: "Kode OTP Lestari", // Subject line
                     html: `
                     <!DOCTYPE html>
 <html lang="en">
@@ -424,8 +452,8 @@ exports.mobforgotpassword = function (req, res) {
     </div>
 </body>
 </html>
-                    `
-                  }
+                    `,
+                  };
                   // async..await is not allowed in global scope, must use a wrapper
                   async function main() {
                     // send mail with defined transport object
@@ -436,36 +464,36 @@ exports.mobforgotpassword = function (req, res) {
                   }
                   main().catch(console.error);
 
-                  response.ok(rows, res)
+                  response.ok(rows, res);
                 }
-              })
+              }
+            );
           }
-
         }
       }
-    )
-
-
+    );
   } else if (email && otp) {
-    connection.query(`SELECT * FROM users WHERE email=?`, [email],
+    connection.query(
+      `SELECT * FROM users WHERE email=?`,
+      [email],
       function (error, results, fields) {
         if (error) {
-          console.log(error)
+          console.log(error);
         } else {
           if (results.length == 0) {
-            res.status(400).send(`${email} Is Not User!`)
+            res.status(400).send(`${email} Is Not User!`);
           } else {
-            connection.query(`SELECT * FROM otps WHERE email=? AND id_otp = (SELECT MAX(id_otp) FROM otps WHERE email=?)`,
+            connection.query(
+              `SELECT * FROM otps WHERE email=? AND id_otp = (SELECT MAX(id_otp) FROM otps WHERE email=?)`,
               [email, email],
               function (error, results, fields) {
                 if (error) {
-                  console.log(error)
+                  console.log(error);
                 } else {
-
-                  let confirmation_used = results[0].used
-                  let confirmation_otp = results[0].otp
-                  let expired_at = results[0].expired_at
-                  let email = results[0].email
+                  let confirmation_used = results[0].used;
+                  let confirmation_otp = results[0].otp;
+                  let expired_at = results[0].expired_at;
+                  let email = results[0].email;
                   let currentTime = new Date();
 
                   if (confirmation_used == 1) {
@@ -475,31 +503,62 @@ exports.mobforgotpassword = function (req, res) {
                   } else if (currentTime > expired_at) {
                     res.status(400).send("OTP Has Been Expired!");
                   } else if (currentTime < expired_at) {
-                    connection.query(`UPDATE otps SET used=1 WHERE email=? AND id_otp = (SELECT MAX(id_otp) FROM otps WHERE email=?)`,
+                    connection.query(
+                      `UPDATE otps SET used=1 WHERE email=? AND id_otp = (SELECT MAX(id_otp) FROM otps WHERE email=?)`,
                       [email, email],
                       function (error, rows, fields) {
                         if (error) {
-                          console.log(error)
+                          console.log(error);
                         } else {
-                          let new_password = '';
+                          let new_password = "";
                           for (let i = 0; i < 6; i++) {
                             new_password += Math.floor(Math.random() * 10);
                           }
-                          connection.query(`UPDATE users SET password=? WHERE email=?`, [md5(new_password), email],
+                          connection.query(
+                            `UPDATE users SET password=? WHERE email=?`,
+                            [md5(new_password), email],
                             function (error, rows, fields) {
                               if (error) {
-                                console.log(error)
+                                console.log(error);
                               } else {
-
                                 let now = new Date();
-                                let day = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][now.getDay()];
-                                let month = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][now.getMonth()];
+                                let day = [
+                                  "Minggu",
+                                  "Senin",
+                                  "Selasa",
+                                  "Rabu",
+                                  "Kamis",
+                                  "Jumat",
+                                  "Sabtu",
+                                ][now.getDay()];
+                                let month = [
+                                  "Januari",
+                                  "Februari",
+                                  "Maret",
+                                  "April",
+                                  "Mei",
+                                  "Juni",
+                                  "Juli",
+                                  "Agustus",
+                                  "September",
+                                  "Oktober",
+                                  "November",
+                                  "Desember",
+                                ][now.getMonth()];
 
-                                let formattedDateTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')} ${day}, ${now.getDate()} ${month} ${now.getFullYear()}`;
-
+                                let formattedDateTime = `${now
+                                  .getHours()
+                                  .toString()
+                                  .padStart(2, "0")}:${now
+                                  .getMinutes()
+                                  .toString()
+                                  .padStart(
+                                    2,
+                                    "0"
+                                  )} ${day}, ${now.getDate()} ${month} ${now.getFullYear()}`;
 
                                 const transporter = nodemailer.createTransport({
-                                  service: 'gmail',
+                                  service: "gmail",
                                   host: "smtp@gmail.com",
                                   port: 587,
                                   secure: false,
@@ -575,28 +634,30 @@ exports.mobforgotpassword = function (req, res) {
                   </div>
               </body>
               </html>
-                                  `
-                                }
+                                  `,
+                                };
 
                                 async function main() {
-
                                   const info = await transporter.sendMail(msg);
-
-
                                 }
                                 main().catch(console.error);
 
-                                response.ok(rows, res)
+                                response.ok(rows, res);
                               }
-                            })
+                            }
+                          );
                         }
-                      })
+                      }
+                    );
                   }
                 }
-              })
+              }
+            );
           }
         }
-      })
-
-  } else { res.status(400).send("Insert Email!"); }
+      }
+    );
+  } else {
+    res.status(400).send("Insert Email!");
+  }
 };
