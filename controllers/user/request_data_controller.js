@@ -148,3 +148,23 @@ exports.mobaddrequestdata = function (req, res) {
     );
   });
 };
+
+
+exports.requestDataGuest = async (req, res) => {
+  const { name, email, profession, instances, subject, body } = req.body
+  if (!name || !email || !profession || !instances || !subject || !body) {
+    return res.status(400).json({ status: 400, message: "Field tidak boleh kosong" })
+  }
+  const qInsertReqData = `INSERT INTO request_datas( name, email, profession, instances, subject, body, approve, id_user,url) VALUES(?,?,?,?,?,?,?,?,?)`
+  const vInsertData = [name, email, profession, instances, subject, body, 0, 0, ""]
+  connection.query(qInsertReqData, vInsertData,
+    (error, rows) => {
+      if (error) {
+        console.log(error)
+        return res.status(400).json({ status: 400, message: "Internal Server Error!" })
+      } else {
+        return res.status(200).json({ status: 200, message: "Permintaan data diterima, cek berkala email!" })
+      }
+    }
+  )
+}

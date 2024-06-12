@@ -154,6 +154,10 @@ module.exports = function (app) {
 
     //FORGET PASSWORD
     app
-    .route("/v1/web/user/forgot_password")
+    .route("/v1/web/user/forgot-password")
     .post(apiUser.account_controller.mobforgotpassword);
+
+    //REQUEST DATA GUEST
+    app.route("/v1/web/user/request-data")
+    .post(apiUser.request_data_controller.requestDataGuest)
 };
