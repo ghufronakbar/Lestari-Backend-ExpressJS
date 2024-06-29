@@ -11,12 +11,18 @@ module.exports = function (app) {
 
   //LOGIN
 
-  app.route("/v1/web/login").post(apiAdmin.account_controller.login);
+  app
+    .route("/v1/web/login")
+    .post(apiAdmin.account_controller.login);
 
 
-  app.route("/v1/web/animals").get(apiAdmin.animal_controller.webanimals);
+  app
+    .route("/v1/web/animals")
+    .get(apiAdmin.animal_controller.webanimals);
 
-  app.route("/v1/web/animal/:id").get(apiAdmin.animal_controller.webanimalid);
+  app
+    .route("/v1/web/animal/:id")
+    .get(apiAdmin.animal_controller.webanimalid);
 
   app
     .route("/v1/web/animal/edit/:id")
@@ -152,12 +158,12 @@ module.exports = function (app) {
 
 
 
-    //FORGET PASSWORD
-    app
+  //FORGET PASSWORD
+  app
     .route("/v1/web/user/forgot-password")
     .post(apiUser.account_controller.mobforgotpassword);
 
-    //REQUEST DATA GUEST
-    app.route("/v1/web/user/request-data")
+  //REQUEST DATA GUEST
+  app.route("/v1/web/user/request-data")
     .post(apiUser.request_data_controller.requestDataGuest)
 };

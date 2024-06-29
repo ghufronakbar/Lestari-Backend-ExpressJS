@@ -1,91 +1,101 @@
 'use strict';
 
-var response = require('../../res');
-var connection = require('../../connection');
-var md5 = require('md5');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-exports.index = function (req, res) {
-    response.ok("REST API Worked!", res)
-}
+exports.webusers = async (req, res) => {
+    try {
+        const users = await prisma.users.findMany({
+            select: {
+                id_user: true,
+                email: true,
+                name: true,
+                phone: true,
+                picture: true,
+                created_at: true,
+                updated_at: true,
+                status: true
+            }, where: {
+                NOT: {
+                    id_user: 0
+                },
 
-//GET USERS
-exports.webusers = function (req, res) {
-    connection.query(`SELECT id_user, email, name, phone, picture, created_at, updated_at, status FROM users`,
-        function (error, rows, fields) {
-            if (error) {
-                console.log(error);
-            } else {
-                let results = [];
-                rows.forEach(row => {
-                    results.push({
-                        id_user: row.id_user,
-                        name: row.name,
-                        email: row.email,
-                        picture: row.picture ? process.env.BASE_URL + `/v1/mob/image/profile/` + row.picture : process.env.BASE_URL + `/v1/mob/image/default/picture.webp`,
-                        phone: row.phone,
-                        created_at: row.created_at,
-                        updated_at: row.updated_at,
-                        status: row.status
-                    });
-                });
-                return res.status(200).json({ status: 200, values: results });
-            };
-        }
-    )
-};
-
-//GET ID USER
-exports.webuserid = function (req, res) {
-    let id = req.params.id
-    connection.query(`SELECT id_user, email, name, phone, picture, created_at, updated_at, status FROM users WHERE id_user=?`, [id],
-        function (error, rows, fields) {
-            if (error) {
-                console.log(error);
-            } else {
-                let results = [];
-                rows.forEach(row => {
-                    results.push({
-                        id_user: row.id_user,
-                        name: row.name,
-                        email: row.email,
-                        picture: row.picture ? process.env.BASE_URL + `/v1/mob/image/profile/` + row.picture : process.env.BASE_URL + `/v1/mob/image/default/picture.webp`,
-                        phone: row.phone,
-                        created_at: row.created_at,
-                        updated_at: row.updated_at,
-                        status: row.status
-                    });
-                });
-                return res.status(200).json({ status: 200, values: results });
-            };
-        }
-    )
-};
-
-
-//SUSPEND USER
-exports.webusersuspend = function (req, res) {
-    let status = req.body.status
-    let id = req.body.id
-    if (status == 1) {
-        connection.query(`UPDATE users SET status=1 WHERE id_user=?`, [id],
-            function (error, rows, fields) {
-                if (error) {
-                    console.log(error);
-                } else {
-                    response.ok(rows, res)
-                };
+            }, orderBy: {
+                id_user: 'desc'
             }
-        )
-    } else if (status == 0) {
-        connection.query(`UPDATE users SET status=0 WHERE id_user=?`, [id],
-            function (error, rows, fields) {
-                if (error) {
-                    console.log(error);
-                } else {
-                    response.ok(rows, res)
-                };
-            }
-        )
+        });
+
+        const results = users.map(user => ({
+            id_user: user.id_user,
+            name: user.name,
+            email: user.email,
+            picture: user.picture ? `${process.env.BASE_URL}/v1/mob/image/profile/${user.picture}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+            phone: user.phone,
+            created_at: user.created_at,
+            updated_at: user.updated_at,
+            status: user.status
+        }));
+
+        return res.status(200).json({ status: 200, values: results });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, message: 'Internal Server Error' });
     }
+};
 
+exports.webuserid = async (req, res) => {
+    const id = parseInt(req.params.id);
+
+    try {
+        const user = await prisma.users.findUnique({
+            where: { id_user: id },
+            select: {
+                id_user: true,
+                email: true,
+                name: true,
+                phone: true,
+                picture: true,
+                created_at: true,
+                updated_at: true,
+                status: true
+            }
+        });
+
+        if (!user) {
+            return res.status(404).json({ status: 404, message: 'User not found' });
+        }
+
+        const result = {
+            id_user: user.id_user,
+            name: user.name,
+            email: user.email,
+            picture: user.picture ? `${process.env.BASE_URL}/v1/mob/image/profile/${user.picture}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+            phone: user.phone,
+            created_at: user.created_at,
+            updated_at: user.updated_at,
+            status: user.status
+        };
+
+        return res.status(200).json({ status: 200, values: [result] });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, message: 'Internal Server Error' });
+    }
+};
+
+exports.webusersuspend = async (req, res) => {
+    const { status, id } = req.body;
+
+    try {
+        await prisma.users.update({
+            where: { id_user: parseInt(id) },
+            data: { status }
+        });
+
+        const message = status === 1 ? 'Suspend successfully' : 'Unsuspend successfully';
+        return res.status(200).json({ status: 200, message });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, message: 'Internal Server Error' });
+    }
 };

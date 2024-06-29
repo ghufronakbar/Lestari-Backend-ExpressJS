@@ -1,90 +1,91 @@
 'use strict';
 
-var response = require('../../res');
-var connection = require('../../connection');
-var md5 = require('md5');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-exports.index = function (req, res) {
-    response.ok("REST API Worked!", res)
-}
+exports.webhistoryrequestdatas = async (req, res) => {
+    try {
+        const historyRequestDatas = await prisma.history_Request_Datas.findMany({
+            include: {
+                send_data: true
+            }
+        });
 
-//GET HISTORY REQUEST DATA
-exports.webhistoryrequestdatas = function (req, res) {
-    connection.query(`SELECT 
+        const results = historyRequestDatas.map(history => ({
+            id_history_request_data: history.id_history_request_data,
+            email: history.email,
+            name: history.name,
+            profession: history.profession,
+            instances: history.instances,
+            subject: history.subject,
+            body: history.body,
+            id_send_data: history.id_send_data,
+            id_user: history.id_user,
+            date: history.date,
+            id_send_data: history.send_data.id_send_data,
+            local_name: history.send_data.local_name,
+            latin_name: history.send_data.latin_name,
+            habitat: history.send_data.habitat,
+            description: history.send_data.description,
+            city: history.send_data.city,
+            longitude: history.send_data.longitude,
+            latitude: history.send_data.latitude,
+            image: history.send_data.image,
+            amount: history.send_data.amount,
+            date_start: history.send_data.date_start,
+            date_end: history.send_data.date_end
+        }));
 
-    history_request_datas.id_history_request_data	,
-    history_request_datas.email	,
-    history_request_datas.name	,
-    history_request_datas.profession,	
-    history_request_datas.instances	,
-    history_request_datas.subject,	
-    history_request_datas.body	,
-    history_request_datas.id_send_data	,
-    history_request_datas.id_user	,
-    history_request_datas.date,
-send_datas.id_send_data	,
-send_datas.local_name	,
-send_datas.latin_name	,
-send_datas.habitat	,
-send_datas.description,	
-send_datas.city	,
-send_datas.longitude	,
-send_datas.latitude	,
-send_datas.image	,
-send_datas.amount	,
-send_datas.date_start,	
-send_datas.date_end
-    FROM history_request_datas JOIN send_datas
-    WHERE history_request_datas.id_send_data = send_datas.id_send_data
-    `,
-        function (error, rows, fields) {
-            if (error) {
-                connection.log(error);
-            } else {
-                response.ok(rows, res)
-            };
-        }
-    )
+        return res.status(200).json({ status: 200, values: results });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, message: 'Internal Server Error' });
+    }
 };
 
+exports.webhistoryrequestdataid = async (req, res) => {
+    const id = parseInt(req.params.id);
 
-//GET ID HISTORY REQUEST DATA
-exports.webhistoryrequestdataid = function (req, res) {
-    let id = req.params.id
-    connection.query(`SELECT 
+    try {
+        const history = await prisma.history_Request_Datas.findUnique({
+            where: { id_history_request_data: id },
+            include: {
+                send_data: true
+            }
+        });
 
-    history_request_datas.id_history_request_data	,
-    history_request_datas.email	,
-    history_request_datas.name	,
-    history_request_datas.profession,	
-    history_request_datas.instances	,
-    history_request_datas.subject,	
-    history_request_datas.body	,
-    history_request_datas.id_send_data	,
-    history_request_datas.id_user	,
-    history_request_datas.date,
-send_datas.id_send_data	,
-send_datas.local_name	,
-send_datas.latin_name	,
-send_datas.habitat	,
-send_datas.description,	
-send_datas.city	,
-send_datas.longitude	,
-send_datas.latitude	,
-send_datas.image	,
-send_datas.amount	,
-send_datas.date_start,	
-send_datas.date_end
-    FROM history_request_datas JOIN send_datas
-    WHERE history_request_datas.id_send_data = send_datas.id_send_data
-    AND history_request_datas.id_history_request_data=?
-    `,[id],
-        function (error, rows, fields) {
-            if (error) {
-                connection.log(error);
-            } else {
-                response.ok(rows, res)
-            };
+        if (!history) {
+            return res.status(404).json({ status: 404, message: 'History Request Data not found' });
         }
-    )
+
+        const result = {
+            id_history_request_data: history.id_history_request_data,
+            email: history.email,
+            name: history.name,
+            profession: history.profession,
+            instances: history.instances,
+            subject: history.subject,
+            body: history.body,
+            id_send_data: history.id_send_data,
+            id_user: history.id_user,
+            date: history.date,
+            id_send_data: history.send_data.id_send_data,
+            local_name: history.send_data.local_name,
+            latin_name: history.send_data.latin_name,
+            habitat: history.send_data.habitat,
+            description: history.send_data.description,
+            city: history.send_data.city,
+            longitude: history.send_data.longitude,
+            latitude: history.send_data.latitude,
+            image: history.send_data.image,
+            amount: history.send_data.amount,
+            date_start: history.send_data.date_start,
+            date_end: history.send_data.date_end
+        };
+
+        return res.status(200).json({ status: 200, values: [result] });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, message: 'Internal Server Error' });
+    }
 };
