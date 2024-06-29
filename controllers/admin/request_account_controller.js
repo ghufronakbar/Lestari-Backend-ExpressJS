@@ -45,18 +45,25 @@ exports.webrequestaccounts = async (req, res) => {
                 { email: { contains: search } },
                 { phone: { contains: search } },
                 { subject: { contains: search } },
+                { instances: { contains: search } },
             ]
         }
-        if (date_start) {
+
+        if (date_start && date_end) {
             where.date = {
-                gte: date_start
-            }
-        }
-        if (date_end) {
+                gte: new Date(date_start),
+                lte: new Date(date_end)
+            };
+        } else if (date_start) {
             where.date = {
-                lte: date_end
-            }
+                gte: new Date(date_start)
+            };
+        } else if (date_end) {
+            where.date = {
+                lte: new Date(date_end)
+            };
         }
+
         if (approve !== undefined && approve !== null && approve !== '') {
             where.approve = approve
         }

@@ -16,7 +16,6 @@ exports.webanimals = async (req, res) => {
                 { latin_name: { contains: search } }
             ]
         }
-        console.log({ date_start, date_end })
         if (date_start && date_end) {
             where.date = {
                 gte: new Date(date_start),
