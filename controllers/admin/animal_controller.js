@@ -5,7 +5,12 @@ const prisma = new PrismaClient();
 
 exports.webanimals = async (req, res) => {
     try {
+        let { page } = req.query
+        page = parseInt(page)
+        if (page === undefined || isNaN(page)) { page = 1 }
         const animals = await prisma.animals.findMany({
+            skip: (page - 1) * 10,
+            take: 10,
             include: {
                 user: {
                     select: {
@@ -16,6 +21,8 @@ exports.webanimals = async (req, res) => {
                         phone: true
                     }
                 }
+            }, orderBy: {
+                id_animal: 'desc'
             }
         });
 
@@ -40,7 +47,16 @@ exports.webanimals = async (req, res) => {
             updated_at: animal.updated_at
         }));
 
-        return res.status(200).json({ status: 200, values: results });
+        const count = await prisma.animals.count();
+
+        const pagination = {
+            page,
+            total_page: Math.ceil(count / 10),
+            total_data: count,
+        }
+
+
+        return res.status(200).json({ status: 200, pagination, values: results });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ status: 500, message: 'Internal Server Error' });

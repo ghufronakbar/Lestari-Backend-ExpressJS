@@ -36,12 +36,24 @@ const sendEmail = async (to, subject, html) => {
 
 exports.webrequestdatas = async (req, res) => {
     try {
+        let { page } = req.query
+        page = parseInt(page)
+        if (page === undefined || isNaN(page)) { page = 1 }
         const requestDatas = await prisma.request_Datas.findMany({
+            skip: (page - 1) * 10,
+            take: 10,
             orderBy: {
                 id_request_data: 'desc'
             }
         });
-        return res.status(200).json({ status: 200, values: requestDatas });
+
+        const count = await prisma.request_Datas.count();
+        const pagination = {
+            page,
+            total_page: Math.ceil(count / 10),
+            total_data: count,
+        }
+        return res.status(200).json({ status: 200, pagination, values: requestDatas });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ status: 500, message: 'Internal Server Error' });
