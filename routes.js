@@ -1,6 +1,7 @@
 "use strict";
 
 const admin_verification = require("./middleware/admin_verification");
+const user_verfication = require("./middleware/user_verification");
 const apiAdmin = require("./controllers/admin");
 const apiUser = require("./controllers/user");
 
@@ -81,29 +82,29 @@ module.exports = function (app) {
   app.route("/v1/mob/user/login").post(apiUser.auth.login);
 
   app
-    .route("/v1/mob/animals/editable/:token")
-    .get(apiUser.editable_animal_controller.mobeditableanimals);
+    .route("/v1/mob/animals/editable")
+    .get(user_verfication, apiUser.editable_animal_controller.mobeditableanimals);
 
-  app.route("/v1/mob/user/check/:token").get(apiUser.auth.check_user);
+  app.route("/v1/mob/user/check").get(apiUser.auth.check_user);
 
   app
-    .route("/v1/mob/animal/:token/:id_animal")
+    .route("/v1/mob/animal/:id_animal")
     .get(apiUser.editable_animal_controller.mobeditableanimalid);
 
   app
     .route("/v1/mob/animal/add")
-    .post(apiUser.editable_animal_controller.mobanimalpost);
+    .post(user_verfication, apiUser.editable_animal_controller.mobanimalpost);
 
   app
-    .route("/v1/mob/animal/editable/edit/:token/:id_animal")
+    .route("/v1/mob/animal/editable/edit/:id_animal")
     .put(apiUser.editable_animal_controller.mobediteditableanimal);
 
   app
-    .route("/v1/mob/animal/editable/delete/:token/:id_animal")
+    .route("/v1/mob/animal/editable/delete/:id_animal")
     .delete(apiUser.editable_animal_controller.deleteAnimalById);
 
   app
-    .route("/v1/mob/animal/upload/image/:token")
+    .route("/v1/mob/animal/upload/image")
     .post(apiUser.editable_animal_controller.mob_upload_image);
 
   app
@@ -111,34 +112,34 @@ module.exports = function (app) {
     .delete(apiUser.editable_animal_controller.deleteImageByURL);
 
   app
-    .route("/v1/mob/animals/history/:token")
+    .route("/v1/mob/animals/history")
     .get(apiUser.history_animal_controller.mobhistoryanimals);
 
   app
-    .route("/v1/mob/animal/history/:token/:id_animal")
+    .route("/v1/mob/animal/history/:id_animal")
     .get(apiUser.history_animal_controller.mobhistoryanimalid);
 
   app
-    .route("/v1/mob/user/account/:token")
+    .route("/v1/mob/user/account")
     .get(apiUser.account_controller.mobaccount);
 
   app
-    .route("/v1/mob/user/account/edit/name/:token")
+    .route("/v1/mob/user/account/edit/name")
     .put(apiUser.account_controller.mobaccounteditname);
 
   app
-    .route("/v1/mob/user/account/edit/picture/:token")
+    .route("/v1/mob/user/account/edit/picture")
     .put(apiUser.account_controller.mob_update_profile);
 
   app
-    .route("/v1/mob/user/account/edit/password/:token")
+    .route("/v1/mob/user/account/edit/password")
     .put(apiUser.account_controller.mobaccounteditpassword);
 
   app
-    .route("/v1/mob/user/request-datas/:token")
+    .route("/v1/mob/user/request-datas")
     .get(apiUser.request_data_controller.mobhistoryrequestdata);
   app
-    .route("/v1/mob/user/request-data/:token/:id_request_data")
+    .route("/v1/mob/user/request-data/:id_request_data")
     .get(apiUser.request_data_controller.mobhistoryrequestdatabyid);
   app
     .route("/v1/mob/user/request-data/add")

@@ -1,230 +1,182 @@
 "use strict";
 
-var response = require("../../res");
-var connection = require("../../connection");
-const verifikasi = require("../../middleware/verifikasi");
-var md5 = require("md5");
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-exports.index = function (req, res) {
-  response.ok("REST API Worked!", res);
+exports.mobhistoryanimals = async (req, res) => {
+  const { id_user } = req.decoded;
+  try {
+    const animals = await prisma.animals.findMany({
+      where: { id_user },
+      select: {
+        id_animal: true,
+        local_name: true,
+        latin_name: true,
+        image: true,
+        city: true,
+        longitude: true,
+        latitude: true,
+      },
+      orderBy: {
+        updated_at: 'desc',
+      },
+    });
+
+    const results = animals.map(animal => ({
+      id_animal: animal.id_animal,
+      local_name: animal.local_name,
+      latin_name: animal.latin_name,
+      image: animal.image ? `${process.env.BASE_URL}/v1/mob/image/animal/${animal.image}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+      city: animal.city,
+      longitude: animal.longitude,
+      latitude: animal.latitude,
+    }));
+
+    return res.status(200).json({ status: 200, values: results });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send('Internal Server Error');
+  }
 };
 
-//GET HISTORY ANIMALS
-exports.mobhistoryanimals = function (req, res) {
-  let token = req.params.token;
-  verifikasi(token)(req, res, function () {
-    var id_user = req.decoded.id_user; // Dapatkan id_user dari decoded token
-    var data = [
-      "id_animal",
-      "local_name",
-      "latin_name",
-      "image",
-      "city",
-      "longitude",
-      "latitude",
-    ];
-    connection.query(
-      `SELECT ?? FROM animals 
-                  WHERE id_user=?
-                  ORDER BY updated_at DESC`,
-      [data, id_user],
-      function (error, rows, fields) {
-        if (error) {
-          console.log(error);
-          res.status(500).send("Internal Server Error");
-        } else {
-          let results = [];
-          rows.forEach(row => {
-            results.push({
-              id_animal: row.id_animal,
-              local_name: row.local_name,
-              latin_name: row.latin_name,
-              image: row.image ? process.env.BASE_URL + `/v1/mob/image/animal/` + row.image : process.env.BASE_URL + `/v1/mob/image/default/picture.webp`,
-              city: row.city,
-              longitude: row.longitude,
-              latitude: row.latitude,
-            });
-          });
-          return res.status(200).json({ status: 200, values: results });
-        }
-      }
-    );
-  });
-};
+exports.mobhistoryanimalid = async (req, res) => {
+  const { id_animal } = req.params;
+  try {
+    const animal = await prisma.animals.findUnique({
+      where: { id_animal: parseInt(id_animal) },
+      select: {
+        id_animal: true,
+        local_name: true,
+        latin_name: true,
+        habitat: true,
+        description: true,
+        city: true,
+        longitude: true,
+        latitude: true,
+        image: true,
+        amount: true,
+        id_user: true,
+        date: true,
+        updated_at: true,
+      },
+    });
 
-//GET HISTORY ID ANIMAL
-exports.mobhistoryanimalid = function (req, res) {
-  let token = req.params.token;
-  let id_animal = req.params.id_animal;
-  connection.query(
-    `SELECT * FROM animals WHERE
-                      id_animal=?`,
-    [id_animal],
-    function (error, rows, fields) {
-      if (error) {
-        console.log(error);
-        res.status(500).send("Internal Server Error");
-      } else {
-        let results = [];
-        rows.forEach(row => {
-          results.push({
-            id_animal: row.id_animal,
-            local_name: row.local_name,
-            latin_name: row.latin_name,
-            habitat: row.habitat,
-            description: row.description,
-            city: row.city,
-            longitude: row.longitude,
-            latitude: row.latitude,
-            image: row.image ? process.env.BASE_URL + `/v1/mob/image/animal/` + row.image : process.env.BASE_URL + `/v1/mob/image/default/picture.webp`,
-            amount: row.amount,
-            id_user: row.id_user,
-            data: row.date,
-            updated_at: row.updated_at
-          });
-        });
-        return res.status(200).json({ status: 200, values: results });
-      }
+    if (!animal) {
+      return res.status(404).send('Animal not found');
     }
-  );
+
+    const result = {
+      id_animal: animal.id_animal,
+      local_name: animal.local_name,
+      latin_name: animal.latin_name,
+      habitat: animal.habitat,
+      description: animal.description,
+      city: animal.city,
+      longitude: animal.longitude,
+      latitude: animal.latitude,
+      image: animal.image ? `${process.env.BASE_URL}/v1/mob/image/animal/${animal.image}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+      amount: animal.amount,
+      id_user: animal.id_user,
+      date: animal.date,
+      updated_at: animal.updated_at,
+    };
+
+    return res.status(200).json({ status: 200, values: [result] });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send('Internal Server Error');
+  }
 };
 
-//POST ANIMAL BY USER
-exports.mobanimalpost = function (req, res) {
-  let local_name = req.body.local_name;
-  let latin_name = req.body.latin_name;
-  let habitat = req.body.habitat;
-  let description = req.body.description;
-  let city = req.body.city;
-  let longitude = req.body.longitude;
-  let latitude = req.body.latitude;
-  let image = req.body.image;
-  let amount = req.body.amount;
-  let token = req.body.token;
-  let now = new Date();
-  let date_now =
-    now.getFullYear() +
-    "-" +
-    ("0" + (now.getMonth() + 1)).slice(-2) +
-    "-" +
-    ("0" + now.getDate()).slice(-2) +
-    " " +
-    ("0" + now.getHours()).slice(-2) +
-    ":" +
-    ("0" + now.getMinutes()).slice(-2) +
-    ":" +
-    ("0" + now.getSeconds()).slice(-2);
 
-  connection.query(
-    `INSERT INTO animals 
-                        (local_name, latin_name, habitat, description, city, longitude, latitude, image, amount, id_user, date,updated_at) 
-                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
-    [
-      local_name,
-      latin_name,
-      habitat,
-      description,
-      city,
-      longitude,
-      latitude,
-      image,
-      amount,
-      token,
-      date_now,
-      date_now,
-    ],
-    function (error, rows, fields) {
-      if (error) {
-        console.log(error);
-      } else {
-        response.ok(rows, res);
+exports.mobanimalpost = async (req, res) => {
+  const { local_name, latin_name, habitat, description, city, longitude, latitude, image, amount } = req.body;
+  const { id_user } = req.decoded;
+  const now = new Date();
+  const date_now = `${now.getFullYear()}-${("0" + (now.getMonth() + 1)).slice(-2)}-${("0" + now.getDate()).slice(-2)} ${("0" + now.getHours()).slice(-2)}:${("0" + now.getMinutes()).slice(-2)}:${("0" + now.getSeconds()).slice(-2)}`;
+
+  try {
+    await prisma.animals.create({
+      data: {
+        local_name,
+        latin_name,
+        habitat,
+        description,
+        city,
+        longitude,
+        latitude,
+        image,
+        amount,
+        id_user,
+        date: date_now,
+        updated_at: date_now
       }
-    }
-  );
+    });
+    return res.status(200).json({ status: 200, message: "Success" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: "Internal Server Error" });
+  }
 };
 
-//EDIT ANIMAL BY USER
-exports.mobediteditableanimal = function (req, res) {
-  let local_name = req.body.local_name;
-  let latin_name = req.body.latin_name;
-  let habitat = req.body.habitat;
-  let description = req.body.description;
-  let city = req.body.city;
-  let longitude = req.body.longitude;
-  let latitude = req.body.latitude;
-  let amount = req.body.amount;
-  let token = req.params.token;
-  let now = new Date();
-  let date_now =
-    now.getFullYear() +
-    "-" +
-    ("0" + (now.getMonth() + 1)).slice(-2) +
-    "-" +
-    ("0" + now.getDate()).slice(-2) +
-    " " +
-    ("0" + now.getHours()).slice(-2) +
-    ":" +
-    ("0" + now.getMinutes()).slice(-2) +
-    ":" +
-    ("0" + now.getSeconds()).slice(-2);
-  let id_animal = req.params.id_animal;
+exports.mobediteditableanimal = async (req, res) => {
+  const { local_name, latin_name, habitat, description, city, longitude, latitude, amount } = req.body;
+  const { id_user } = req.decoded;
+  const { id_animal } = req.params;
+  const now = new Date();
+  const date_now = `${now.getFullYear()}-${("0" + (now.getMonth() + 1)).slice(-2)}-${("0" + now.getDate()).slice(-2)} ${("0" + now.getHours()).slice(-2)}:${("0" + now.getMinutes()).slice(-2)}:${("0" + now.getSeconds()).slice(-2)}`;
 
-  connection.query(
-    `UPDATE animals SET local_name=?,latin_name=?, habitat=?, description=?,
-                        city=?, longitude=?, latitude=?,
-                        amount=?, 
-                        updated_at=? WHERE id_animal=? AND id_user=?`,
-    [
-      local_name,
-      latin_name,
-      habitat,
-      description,
-      city,
-      longitude,
-      latitude,
-      amount,
-      date_now,
-      id_animal,
-      token,
-    ],
-    function (error, rows, fields) {
-      if (error) {
-        console.log(error);
-      } else {
-        response.ok(rows, res);
+  try {
+    await prisma.animals.updateMany({
+      where: {
+        id_animal: parseInt(id_animal),
+        id_user
+      },
+      data: {
+        local_name,
+        latin_name,
+        habitat,
+        description,
+        city,
+        longitude,
+        latitude,
+        amount,
+        updated_at: date_now
       }
-    }
-  );
+    });
+    return res.status(200).json({ status: 200, message: "Success" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: "Internal Server Error" });
+  }
 };
 
-//EDIT ANIMAL IMAGE BY USER
-exports.mobediteditableanimalimage = function (req, res) {
-  let image = req.body.image;
-  let token = req.params.token;
-  let now = new Date();
-  let date_now =
-    now.getFullYear() +
-    "-" +
-    ("0" + (now.getMonth() + 1)).slice(-2) +
-    "-" +
-    ("0" + now.getDate()).slice(-2) +
-    " " +
-    ("0" + now.getHours()).slice(-2) +
-    ":" +
-    ("0" + now.getMinutes()).slice(-2) +
-    ":" +
-    ("0" + now.getSeconds()).slice(-2);
-  let id_animal = req.params.id_animal;
+exports.mobediteditableanimalimage = async (req, res) => {
+  const { image } = req.body;
+  const { id_user } = req.decoded;
+  const { id_animal } = req.params;
+  const now = new Date();
+  const date_now = `${now.getFullYear()}-${("0" + (now.getMonth() + 1)).slice(-2)}-${("0" + now.getDate()).slice(-2)} ${("0" + now.getHours()).slice(-2)}:${("0" + now.getMinutes()).slice(-2)}:${("0" + now.getSeconds()).slice(-2)}`;
 
-  connection.query(
-    `UPDATE animals SET image=?, updated_at=? WHERE id_animal=? AND id_user=?`,
-    [image, date_now, id_animal, token],
-    function (error, rows, fields) {
-      if (error) {
-        console.log(error);
-      } else {
-        response.ok(rows, res);
+  try {
+    const result = await prisma.animals.updateMany({
+      where: {
+        id_animal: parseInt(id_animal),
+        id_user
+      },
+      data: {
+        image,
+        updated_at: date_now
       }
+    });
+
+    if (result.count === 0) {
+      return res.status(404).json({ status: 404, message: "Animal not found or user not authorized" });
     }
-  );
+
+    return res.status(200).json({ status: 200, message: "Edited" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: "Internal Server Error" });
+  }
 };

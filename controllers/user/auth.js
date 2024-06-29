@@ -1,133 +1,97 @@
 "use strict";
 
-var connection = require("../../connection");
-var mysql = require("mysql");
-var md5 = require("md5");
-var response = require("../../res");
-var jwt = require("jsonwebtoken");
-var config = require("../../config/secret");
-var ip = require("ip");
-const verifikasi = require("../../middleware/verifikasi");
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+const md5 = require("md5");
+const jwt = require("jsonwebtoken");
+const ip = require("ip");
 
-//REGISTER
-// exports.register = function(req,res){
-//     var post = {
-//         nik: req.body.nik,
-//         kk: req.body.kk,
-//         nama_lengkap: req.body.nama_lengkap,
-//         tanggal_lahir: req.body.tanggal_lahir,
-//         foto: "default.png",
-//         hak_pilih: 0,
-//         password: md5(req.body.password)
-//     }
+exports.login = async function (req, res) {
+  const { email, password } = req.body;
 
-//     var query = "SELECT nik FROM ?? WHERE ??";
-//     var table = ["warga","nik",post.nik]
+  try {
+    const user = await prisma.users.findFirst({
+      where: {
+        email: email,
+      },
+    });
 
-//     query = mysql.format(query,table);
-
-//     connection.query(query, function(error, rows) {
-//         if (error) {
-//             console.log(error);
-//             response.error("Terjadi kesalahan pada server", res);
-//         } else {
-//             let isNIKExist = false;
-//             rows.forEach(row => {
-//                 if (row.nik === post.nik) {
-//                     isNIKExist = true;
-//                 }
-//             });
-
-//             if (!isNIKExist) {
-//                 var query = "INSERT INTO ?? SET ?";
-//                 var table = ["warga"];
-//                 query = mysql.format(query,table);
-//                 connection.query(query,post, function(error,rows) {
-//                     if(error){
-//                         console.log(error)
-//                         response.error("Gagal menambahkan data warga", res);
-//                     } else {
-//                         response.ok("Berhasil menambahkan data warga", res);
-//                     }
-//                 });
-//             } else {
-//                 console.log("NIK Sudah Terdaftar!");
-//                 response.error("NIK sudah terdaftar!", res);
-//             }
-//         }
-//     });
-// }
-
-//LOGIN
-exports.login = function (req, res) {
-  var post = {
-    email: req.body.email,
-    password: req.body.password,
-  };
-  var query = "SELECT * FROM ?? WHERE ??=? AND ??=?";
-  var table = ["users", "password", md5(post.password), "email", post.email];
-
-  query = mysql.format(query, table);
-  connection.query(query, function (error, rows) {
-    if (error) {
-      console.log(error);
-    } else {
-      if (rows.length == 1) {
-        var id_user = rows[0].id_user;
-        var token = jwt.sign({ id_user }, config.secret, {
-          expiresIn: 43200,
-        });
-
-        // Hapus token lama sebelum memperbarui dengan yang baru
-        var deleteQuery = "UPDATE ?? SET ?? = NULL WHERE id_user = ?";
-        var deleteTable = ["users", "refresh_token", id_user];
-
-        deleteQuery = mysql.format(deleteQuery, deleteTable);
-        connection.query(deleteQuery, function (deleteError, deleteRows) {
-          if (deleteError) {
-            console.log(deleteError);
-          } else {
-            // Setelah menghapus token lama, lakukan pembaruan dengan yang baru
-            var updateQuery =
-              "UPDATE ?? SET ?? = ? , ?? = ?  WHERE id_user = ?";
-            var updateTable = [
-              "users",
-              "refresh_token",
-              token,
-              "ip_address",
-              ip.address(),
-              id_user,
-            ];
-
-            updateQuery = mysql.format(updateQuery, updateTable);
-            connection.query(updateQuery, function (updateError, updateRows) {
-              if (updateError) {
-                console.log(updateError);
-              } else {
-                res.json({
-                  success: true,
-                  message: "Token JWT Generated!",
-                  token: token,
-                });
-              }
-            });
-          }
-        });
-      } else {
-        console.log(query);
-        res.status(404).json({
-          Error: true,
-          Message: "Email atau Password Salah!",
-        });
-      }
+    if (!user) {
+      return res.status(404).json({
+        Error: true,
+        Message: "Email atau Password Salah!",
+      });
     }
-  });
+
+    // Verify password
+    if (user.password !== md5(password)) {
+      return res.status(404).json({
+        Error: true,
+        Message: "Email atau Password Salah!",
+      });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign({ id_user: user.id_user }, process.env.JWT_SECRET, {
+      expiresIn: '12h', // 43200 seconds
+    });
+
+    // Update refresh_token and ip_address
+    const updateUserData = {
+      refresh_token: token,
+      ip_address: ip.address(),
+    };
+
+    const updatedUser = await prisma.users.update({
+      where: {
+        id_user: user.id_user,
+      },
+      data: updateUserData,
+    });
+
+    res.json({
+      success: true,
+      message: "Token JWT Generated!",
+      token: token,
+    });
+  } catch (error) {
+    console.error("Error during login:", error);
+    res.status(500).json({
+      Error: true,
+      Message: "Internal Server Error",
+    });
+  }
 };
 
-exports.check_user = function (req, res) {
-  let token = req.params.token;
-  verifikasi(token)(req, res, function () {
-    var id_user = req.decoded.id_user;
-    res.status(200).json({status: 200, id_user: id_user });
-  });
+exports.check_user = async function (req, res) {
+  const id_user = req.decoded.id_user;
+
+  try {
+    const user = await prisma.users.findFirst({
+      where: {
+        id_user: id_user,
+      },
+      select: {
+        id_user: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        Error: true,
+        Message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      status: 200,
+      id_user: user.id_user,
+    });
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({
+      Error: true,
+      Message: "Internal Server Error",
+    });
+  }
 };
