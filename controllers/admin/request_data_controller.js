@@ -45,8 +45,9 @@ exports.webrequestdatas = async (req, res) => {
             OR: [
                 { name: { contains: search } },
                 { email: { contains: search } },
-                { phone: { contains: search } },
-                { message: { contains: search } },
+                { profession: { contains: search } },
+                { instances: { contains: search } },
+                { subject: { contains: search } },
             ]
 
         }

@@ -16,7 +16,21 @@ exports.webanimals = async (req, res) => {
                 { latin_name: { contains: search } }
             ]
         }
-
+        console.log({ date_start, date_end })
+        if (date_start && date_end) {
+            where.date = {
+                gte: new Date(date_start),
+                lte: new Date(date_end)
+            };
+        } else if (date_start) {
+            where.date = {
+                gte: new Date(date_start)
+            };
+        } else if (date_end) {
+            where.date = {
+                lte: new Date(date_end)
+            };
+        }
         const animals = await prisma.animals.findMany({
             skip: (page - 1) * 10,
             take: 10,
@@ -36,17 +50,6 @@ exports.webanimals = async (req, res) => {
             },
             where
         });
-
-        if (date_start) {
-            where.date = {
-                gte: date_start
-            }
-        }
-        if (date_end) {
-            where.date = {
-                lte: date_end
-            }
-        }
 
         const results = animals.map(animal => ({
             id_animal: animal.id_animal,

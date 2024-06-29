@@ -28,8 +28,8 @@ model Animals {
   image       String
   amount      Int
   id_user     Int
-  date        DateTime
-  updated_at  DateTime
+  date        DateTime? @default(now())
+  updated_at  DateTime? @default(now())
   user        Users    @relation(fields: [id_user], references: [id_user], onDelete: Cascade, onUpdate: Cascade)
 }
 
