@@ -5,9 +5,18 @@ const prisma = new PrismaClient();
 
 exports.webanimals = async (req, res) => {
     try {
-        let { page } = req.query
+        let { page, search, date_start, date_end } = req.query
+        if (search === undefined || search === '') { search = '' }
         page = parseInt(page)
         if (page === undefined || isNaN(page)) { page = 1 }
+
+        const where = {
+            OR: [
+                { local_name: { contains: search } },
+                { latin_name: { contains: search } }
+            ]
+        }
+
         const animals = await prisma.animals.findMany({
             skip: (page - 1) * 10,
             take: 10,
@@ -21,10 +30,23 @@ exports.webanimals = async (req, res) => {
                         phone: true
                     }
                 }
-            }, orderBy: {
+            },
+            orderBy: {
                 id_animal: 'desc'
-            }
+            },
+            where
         });
+
+        if (date_start) {
+            where.date = {
+                gte: date_start
+            }
+        }
+        if (date_end) {
+            where.date = {
+                lte: date_end
+            }
+        }
 
         const results = animals.map(animal => ({
             id_animal: animal.id_animal,
@@ -47,7 +69,7 @@ exports.webanimals = async (req, res) => {
             updated_at: animal.updated_at
         }));
 
-        const count = await prisma.animals.count();
+        const count = await prisma.animals.count({ where });
 
         const pagination = {
             page,

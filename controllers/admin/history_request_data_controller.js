@@ -5,15 +5,40 @@ const prisma = new PrismaClient();
 
 exports.webhistoryrequestdatas = async (req, res) => {
     try {
-        let { page } = req.query
+        let { page, search, date_start, date_end } = req.query
+        if (search === undefined || search === '') { search = '' }
         page = parseInt(page)
         if (page === undefined || isNaN(page)) { page = 1 }
+        const where = {
+            OR: [
+                { email: { contains: search } },
+                { name: { contains: search } },
+                { profession: { contains: search } },
+                { instances: { contains: search } },
+                { subject: { contains: search } },
+                { body: { contains: search } }
+            ]
+        }
+        if (date_start) {
+            where.date = {
+                gte: date_start
+            }
+        }
+        if (date_end) {
+            where.date = {
+                lte: date_end
+            }
+        }
         const historyRequestDatas = await prisma.history_Request_Datas.findMany({
             skip: (page - 1) * 10,
             take: 10,
             include: {
                 send_data: true
-            }
+            },
+            orderBy: {
+                id_history_request_data: 'desc'
+            },
+            where
         });
 
         const results = historyRequestDatas.map(history => ({
@@ -40,8 +65,8 @@ exports.webhistoryrequestdatas = async (req, res) => {
             date_start: history.send_data.date_start,
             date_end: history.send_data.date_end
         }));
-        
-        const count = await prisma.history_Request_Datas.count();
+
+        const count = await prisma.history_Request_Datas.count({ where });
 
         const pagination = {
             page,

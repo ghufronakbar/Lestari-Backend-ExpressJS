@@ -4,7 +4,8 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
 }
 
 model Admins {
@@ -33,18 +34,18 @@ model Animals {
 }
 
 model History_Request_Datas {
-  id_history_request_data Int       @id @default(autoincrement())
+  id_history_request_data Int        @id @default(autoincrement())
   email                   String
   name                    String
   profession              String
   instances               String
   subject                 String
-  body                    String    @db.Text()
+  body                    String     @db.Text()
   id_send_data            Int
   id_user                 Int
   date                    DateTime?
   send_data               Send_Datas @relation(fields: [id_send_data], references: [id_send_data], onDelete: Cascade, onUpdate: Cascade)
-  user                    Users     @relation(fields: [id_user], references: [id_user], onDelete: Cascade, onUpdate: Cascade)
+  user                    Users      @relation(fields: [id_user], references: [id_user], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Otps {
@@ -84,33 +85,33 @@ model Request_Datas {
 }
 
 model Send_Datas {
-  id_send_data        Int                   @id @default(autoincrement())
-  local_name          Int
-  latin_name          Int
-  habitat             Int
-  description         Int
-  city                Int
-  longitude           Int
-  latitude            Int
-  image               Int
-  amount              Int
-  date_start          DateTime              @db.Date()
-  date_end            DateTime              @db.Date()
+  id_send_data          Int                     @id @default(autoincrement())
+  local_name            Int
+  latin_name            Int
+  habitat               Int
+  description           Int
+  city                  Int
+  longitude             Int
+  latitude              Int
+  image                 Int
+  amount                Int
+  date_start            DateTime                @db.Date()
+  date_end              DateTime                @db.Date()
   History_Request_Datas History_Request_Datas[]
 }
 
 model Users {
-  id_user               Int                   @id @default(autoincrement())
+  id_user               Int                     @id @default(autoincrement())
   email                 String?
   name                  String?
   phone                 String?
   password              String?
   picture               String?
-  refresh_token         String?               @db.Text()
+  refresh_token         String?                 @db.Text()
   created_at            DateTime?
   updated_at            DateTime?
   status                Int?
-  ip_address            String? 
+  ip_address            String?
   animals               Animals[]
   request_datas         Request_Datas[]
   history_request_datas History_Request_Datas[]

@@ -5,9 +5,27 @@ const prisma = new PrismaClient();
 
 exports.webusers = async (req, res) => {
     try {
-        let { page } = req.query
+        let { page, search, status } = req.query
+        status = status && parseInt(status)
+        if (search === undefined || search === '') { search = '' }
         page = parseInt(page)
         if (page === undefined || isNaN(page)) { page = 1 }
+
+        const where = {
+            NOT: {
+                id_user: 0
+            },
+            OR: [
+                { name: { contains: search } },
+                { email: { contains: search } },
+                { phone: { contains: search } }
+            ]
+        }
+
+        if (status !== undefined && status !== '') {
+            where.status = status
+        }
+
         const users = await prisma.users.findMany({
             skip: (page - 1) * 10,
             take: 10,
@@ -20,12 +38,8 @@ exports.webusers = async (req, res) => {
                 created_at: true,
                 updated_at: true,
                 status: true
-            }, where: {
-                NOT: {
-                    id_user: 0
-                },
-
-            }, orderBy: {
+            }, where,
+            orderBy: {
                 id_user: 'desc'
             }
         });
@@ -41,8 +55,8 @@ exports.webusers = async (req, res) => {
             status: user.status
         }));
 
-        const count = await prisma.users.count();
-        
+        const count = await prisma.users.count({ where });
+
         const pagination = {
             page,
             total_page: Math.ceil(count / 10),

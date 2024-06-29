@@ -36,18 +36,41 @@ const sendEmail = async (to, subject, html) => {
 
 exports.webrequestdatas = async (req, res) => {
     try {
-        let { page } = req.query
+        let { page, search, date_start, date_end } = req.query
+        if (search === undefined || search === '') { search = '' }
         page = parseInt(page)
         if (page === undefined || isNaN(page)) { page = 1 }
+
+        const where = {
+            OR: [
+                { name: { contains: search } },
+                { email: { contains: search } },
+                { phone: { contains: search } },
+                { message: { contains: search } },
+            ]
+
+        }
+
+        if (date_start) {
+            where.date = {
+                gte: date_start
+            }
+        }
+        if (date_end) {
+            where.date = {
+                lte: date_end
+            }
+        }
         const requestDatas = await prisma.request_Datas.findMany({
             skip: (page - 1) * 10,
             take: 10,
             orderBy: {
                 id_request_data: 'desc'
-            }
+            },
+            where
         });
 
-        const count = await prisma.request_Datas.count();
+        const count = await prisma.request_Datas.count({ where });
         const pagination = {
             page,
             total_page: Math.ceil(count / 10),

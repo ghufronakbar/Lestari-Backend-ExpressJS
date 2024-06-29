@@ -34,18 +34,41 @@ const sendEmail = async (to, subject, html) => {
 
 exports.webrequestaccounts = async (req, res) => {
     try {
-        let { page } = req.query
+        let { page, search, approve, date_start, date_end } = req.query
+        approve = approve && parseInt(approve)
+        if (search === undefined || search === '') { search = '' }
         page = parseInt(page)
         if (page === undefined || isNaN(page)) { page = 1 }
+        const where = {
+            OR: [
+                { name: { contains: search } },
+                { email: { contains: search } },
+                { phone: { contains: search } },
+                { subject: { contains: search } },
+            ]
+        }
+        if (date_start) {
+            where.date = {
+                gte: date_start
+            }
+        }
+        if (date_end) {
+            where.date = {
+                lte: date_end
+            }
+        }
+        if (approve !== undefined && approve !== null && approve !== '') {
+            where.approve = approve
+        }
         const requestAccounts = await prisma.request_Accounts.findMany({
             skip: (page - 1) * 10,
             take: 10,
             orderBy: {
                 id_request_account: 'desc'
-            }
+            },
+            where,
         });
-
-        const count = await prisma.request_Accounts.count();
+        const count = await prisma.request_Accounts.count({ where });
 
         const pagination = {
             page,
