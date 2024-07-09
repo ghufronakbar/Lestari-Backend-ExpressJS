@@ -2,11 +2,18 @@
   "name": "lestari-be",
   "version": "0.0.1",
   "description": "webserver lestari",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "prisma generate && prisma db seed",
+    "postinstall": "prisma generate && prisma db seed"
   },
-  "author": "",
+  "prisma":{
+    "seed": "node prisma/seed.js"    
+  },
+  "author": "Lestari",
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^5.16.1",

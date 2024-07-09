@@ -1,5 +1,5 @@
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -9,19 +9,19 @@ generator client {
 }
 
 model Admins {
-  id_admin      Int    @id @default(autoincrement())
-  email         String @unique
+  id_admin      Int     @id @default(autoincrement())
+  email         String  @unique
   password      String
-  refresh_token String @db.Text()
-  ip_address    String
+  refresh_token String? @db.Text()
+  ip_address    String?
 }
 
 model Animals {
-  id_animal   Int      @id @default(autoincrement())
+  id_animal   Int       @id @default(autoincrement())
   local_name  String
   latin_name  String
   habitat     String
-  description String?  @db.Text()
+  description String?   @db.Text()
   city        String
   longitude   String
   latitude    String
@@ -30,7 +30,7 @@ model Animals {
   id_user     Int
   date        DateTime? @default(now())
   updated_at  DateTime? @default(now())
-  user        Users    @relation(fields: [id_user], references: [id_user], onDelete: Cascade, onUpdate: Cascade)
+  user        Users     @relation(fields: [id_user], references: [id_user], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model History_Request_Datas {
