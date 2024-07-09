@@ -8,7 +8,7 @@ exports.webusers = async (req, res) => {
     const { hostname } = req;
     const port = req.port !== undefined ? `:${req.port}` : process.env.PORT !== undefined ? `:${process.env.PORT}` : '';
     const baseUrl = `http://${hostname}${port}`;
-    
+
     try {
         let { page, search, status } = req.query
         status = status && parseInt(status)
@@ -53,7 +53,7 @@ exports.webusers = async (req, res) => {
             id_user: user.id_user,
             name: user.name,
             email: user.email,
-            picture: user.picture ? `${baseUrl}/v1/mob/image/profile/${user.picture}` : `${baseUrl}/v1/mob/image/default/picture.webp`,
+            picture: user.picture ? `${baseUrl}/v1/mob/image/profile/${user.picture}` : `${baseUrl}/v1/mob/image/profile/default.png`,
             phone: user.phone,
             created_at: user.created_at,
             updated_at: user.updated_at,
