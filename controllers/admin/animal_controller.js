@@ -1,90 +1,195 @@
 'use strict';
 
-var response = require('../../res');
-var connection = require('../../connection');
-var md5 = require('md5');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-exports.index = function (req, res) {
-    response.ok("REST API Worked!", res)
-}
+exports.webanimals = async (req, res) => {
+    try {
+        let { page, search, date_start, date_end } = req.query
+        if (search === undefined || search === '') { search = '' }
+        page = parseInt(page)
+        if (page === undefined || isNaN(page)) { page = 1 }
 
-//GET ANIMALS
-exports.webanimals = function (req, res) {
-    connection.query(`SELECT animals.id_animal, animals.local_name, animals.latin_name, 
-                        animals.habitat, animals.description, animals.city, animals.longitude, 
-                        animals.latitude, animals.image, animals.amount, users.id_user, users.name, 
-                        users.email, animals.date, animals.updated_at FROM animals JOIN users 
-                        WHERE animals.id_user = users.id_user`,
-        function (error, rows, fields) {
-            if (error) {
-                connection.log(error);
-            } else {
-                response.ok(rows, res)
+        const where = {
+            OR: [
+                { local_name: { contains: search } },
+                { latin_name: { contains: search } }
+            ]
+        }
+        if (date_start && date_end) {
+            where.date = {
+                gte: new Date(date_start),
+                lte: new Date(date_end)
+            };
+        } else if (date_start) {
+            where.date = {
+                gte: new Date(date_start)
+            };
+        } else if (date_end) {
+            where.date = {
+                lte: new Date(date_end)
             };
         }
-    )
-};
+        const animals = await prisma.animals.findMany({
+            skip: (page - 1) * 10,
+            take: 10,
+            include: {
+                user: {
+                    select: {
+                        id_user: true,
+                        name: true,
+                        email: true,
+                        picture: true,
+                        phone: true
+                    }
+                }
+            },
+            orderBy: {
+                id_animal: 'desc'
+            },
+            where
+        });
 
-//GET ID ANIMAL
-exports.webanimalid = function (req, res) {
-    let id = req.params.id;
-    connection.query(`SELECT animals.id_animal, animals.local_name, animals.latin_name, 
-                        animals.habitat, animals.description, animals.city, animals.longitude, 
-                        animals.latitude, animals.image, animals.amount, users.id_user, users.name, 
-                        users.email, animals.date, animals.updated_at FROM animals JOIN users 
-                        WHERE animals.id_user = users.id_user AND animals.id_animal = ?`, [id],
-        function (error, rows, fields) {
-            if (error) {
-                connection.log(error);
-            } else {
-                response.ok(rows, res)
-            };
+        const results = animals.map(animal => ({
+            id_animal: animal.id_animal,
+            local_name: animal.local_name,
+            latin_name: animal.latin_name,
+            habitat: animal.habitat,
+            description: animal.description,
+            city: animal.city,
+            longitude: animal.longitude,
+            latitude: animal.latitude,
+            url_google_map: `http://maps.google.com/maps/search/?api=1&query=${animal.latitude}%2C${animal.longitude}`,
+            image: animal.image ? `${process.env.BASE_URL}/v1/mob/image/animal/${animal.image}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+            amount: animal.amount,
+            id_user: animal.user.id_user,
+            name: animal.user.name,
+            email: animal.user.email,
+            user_picture: animal.user.picture ? `${process.env.BASE_URL}/v1/mob/image/profile/${animal.user.picture}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+            phone: animal.user.phone,
+            date: animal.date,
+            updated_at: animal.updated_at
+        }));
+
+        const count = await prisma.animals.count({ where });
+
+        const pagination = {
+            page,
+            total_page: Math.ceil(count / 10),
+            total_data: count,
         }
-    )
+
+
+        return res.status(200).json({ status: 200, pagination, values: results });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, message: 'Internal Server Error' });
+    }
+};
+
+exports.webanimalid = async (req, res) => {
+    const id = parseInt(req.params.id);
+
+    try {
+        const animal = await prisma.animals.findUnique({
+            where: {
+                id_animal: id
+            },
+            include: {
+                user: {
+                    select: {
+                        id_user: true,
+                        name: true,
+                        email: true,
+                        picture: true,
+                        phone: true
+                    }
+                }
+            }
+        });
+
+        if (!animal) {
+            return res.status(404).json({ status: 404, message: 'Animal not found' });
+        }
+
+        const result = {
+            id_animal: animal.id_animal,
+            local_name: animal.local_name,
+            latin_name: animal.latin_name,
+            habitat: animal.habitat,
+            description: animal.description,
+            city: animal.city,
+            longitude: animal.longitude,
+            latitude: animal.latitude,
+            image: animal.image ? `${process.env.BASE_URL}/v1/mob/image/animal/${animal.image}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+            amount: animal.amount,
+            id_user: animal.user.id_user,
+            name: animal.user.name,
+            email: animal.user.email,
+            user_picture: animal.user.picture ? `${process.env.BASE_URL}/v1/mob/image/profile/${animal.user.picture}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+            phone: animal.user.phone,
+            date: animal.date,
+            updated_at: animal.updated_at
+        };
+
+        return res.status(200).json({ status: 200, values: [result] });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, message: 'Internal Server Error' });
+    }
 };
 
 
-//PUT ANIMAL
-exports.webanimaledit = function (req, res) {
-    let local_name = req.body.local_name;
-    let latin_name = req.body.latin_name;
-    let habitat = req.body.habitat;
-    let description = req.body.description;
-    let city = req.body.city;
-    let longitude = req.body.longitude;
-    let latitude = req.body.latitude;
-    let image = req.body.image;
-    let amount = req.body.amount;
-    let now = new Date();
-    let updated_at = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2) + ' ' +
-        ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) + ':' + ('0' + now.getSeconds()).slice(-2);
+exports.webanimaledit = async (req, res) => {
+    const {
+        local_name,
+        latin_name,
+        habitat,
+        description,
+        city,
+        longitude,
+        latitude,
+        image,
+        amount
+    } = req.body;
 
-    let id = req.params.id;
+    const id = parseInt(req.params.id);
 
-    connection.query(`UPDATE animals SET local_name=?,latin_name=?, habitat=?, description=?,
-                        city=?, longitude=?, latitude=?,
-                        image=?, amount=?, 
-                        updated_at=? WHERE id_animal=?`,
-        [local_name, latin_name, habitat, description, city, longitude, latitude, image, amount, updated_at, id],
-        function (error, rows, fields) {
-            if (error) {
-                console.log(error);
-            } else {
-                response.ok(rows, res)
-            };
-        })
+    try {
+        const updatedAnimal = await prisma.animals.update({
+            where: { id_animal: id },
+            data: {
+                local_name,
+                latin_name,
+                habitat,
+                description,
+                city,
+                longitude,
+                latitude,
+                image,
+                amount,
+                updated_at: new Date()
+            }
+        });
+
+        return res.status(200).json({ status: 200, message: 'Animal updated successfully', animal: updatedAnimal });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, message: 'Internal Server Error' });
+    }
 };
 
-//DELETE ANIMAL
-exports.webanimaldelete = function (req, res) {
-    let id = req.params.id;
-    connection.query('DELETE FROM animals WHERE id_animal=?',
-        [id],
-        function (error, rows, fields) {
-            if (error) {
-                console.log(error);
-            } else {
-                response.ok(rows, res)
-            };
-        })
-}
+exports.webanimaldelete = async (req, res) => {
+    const id = parseInt(req.params.id);
+
+    try {
+        await prisma.animals.delete({
+            where: { id_animal: id }
+        });
+
+        return res.status(200).json({ status: 200, message: 'Animal deleted successfully' });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, message: 'Internal Server Error' });
+    }
+};

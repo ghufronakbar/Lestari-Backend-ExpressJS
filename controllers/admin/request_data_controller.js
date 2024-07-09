@@ -1,141 +1,313 @@
 'use strict';
 
-var response = require('../../res');
-var connection = require('../../connection');
-var md5 = require('md5');
-
-exports.index = function (req, res) {
-    response.ok("REST API Worked!", res)
-}
-
-//GET REQUEST DATAS
-exports.webrequestdatas = function (req, res) {
-    connection.query(`SELECT * FROM request_datas`,
-        function (error, rows, fields) {
-            if (error) {
-                connection.log(error);
-            } else {
-                response.ok(rows, res)
-            };
-        }
-    )
-};
+const nodemailer = require("nodemailer");
+const path = require('path');
+const fs = require('fs');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+const email_style = require('../../lib/email_style');
 
 
-//GET ID REQUEST DATA
-exports.webrequestdataid = function (req, res) {
-    let id = req.params.id
-    connection.query(`SELECT * FROM request_datas WHERE id_request_data=?`,[id],
-        function (error, rows, fields) {
-            if (error) {
-                connection.log(error);
-            } else {
-                response.ok(rows, res)
-            };
-        }
-    )
-};
+const sendEmail = async (to, subject, html) => {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        auth: {
+            user: process.env.EMAIL,
+            pass: process.env.PASSWORD,
+        },
+    });
 
-//APPROVE REQUEST DATA
-exports.webapproverequestdata = function (req, res) {
-    let approve = req.body.approve;
-    let id = req.params.id;
+    const msg = {
+        from: '"Lestari" <main@lestari.com>',
+        to,
+        subject,
+        html,
+    };
 
-    if (approve == 1) {
-        connection.query(`UPDATE request_datas SET approve=1 WHERE id_request_data=?`,
-            [id],
-            function (error, rows, fields) {
-                if (error) {
-                    console.log(error);
-                } else {
-                    response.ok(rows, res)
-                }
-            });
-    } else if (approve == 2) {
-        connection.query(`UPDATE request_datas SET approve=2 WHERE id_request_data=?`,
-        [id],
-        function (error, rows, fields) {
-            if (error) {
-                console.log(error);
-            } else {
-                response.ok(rows, res)
-            }
-        });
+    try {
+        await transporter.sendMail(msg);
+    } catch (error) {
+        console.error('Error sending email:', error);
     }
 };
 
-//SEND REQUEST DATA
-exports.websendrequestdata = function (req, res) {
-    let local_name = req.body.local_name;
-    let latin_name = req.body.latin_name;
-    let habitat = req.body.habitat;
-    let description = req.body.description;
-    let city = req.body.city;
-    let longitude = req.body.longitude;
-    let latitude = req.body.latitude;
-    let image = req.body.image;
-    let amount = req.body.amount;
-    let date_start = req.body.date_start;
-    let date_end = req.body.date_end;
-    let id_request_data = req.body.id_request_data;
+exports.webrequestdatas = async (req, res) => {
+    try {
+        let { page, search, date_start, date_end } = req.query
+        if (search === undefined || search === '') { search = '' }
+        page = parseInt(page)
+        if (page === undefined || isNaN(page)) { page = 1 }
 
-    // Langkah 1: Masukkan data ke dalam send_datas
-    connection.query(`INSERT INTO send_datas 
-                        (local_name, latin_name, habitat, description,
-                        city, longitude, latitude, image, amount,
-                        date_start, date_end) VALUES(?,?,?,?,?,?,?,?,?,?,?)`,
-        [local_name, latin_name, habitat, description, city,
-            longitude, latitude, image, amount, date_start, date_end],
-        function (error, result, fields) {
-            if (error) {
-                console.log(error);
-                res.status(500).send("Failed to insert data into send_datas");
-            } else {
-                // Langkah 2: Ambil id_send_data terbaru
-                connection.query('SELECT MAX(id_send_data) AS max_id FROM send_datas', function (error, response, fields) {
-                    if (error) {
-                        console.log(error);
-                        res.status(500).send("Failed to retrieve max id_send_data");
-                    } else {
-                        let id_send_data = response[0].max_id;
-                        
-                        // Langkah 3: Ambil data dari request_datas
-                        connection.query(`SELECT * FROM request_datas WHERE id_request_data=?`, [id_request_data], function (error, results, fields) {
-                            if (error) {
-                                console.log(error);
-                                res.status(500).send("Failed to retrieve data from request_datas");
-                            } else {
-                                if (results.length > 0) {
-                                    let name = results[0].name;
-                                    let email = results[0].email;
-                                    let profession = results[0].profession;
-                                    let instances = results[0].instances;
-                                    let subject = results[0].subject;
-                                    let body = results[0].body;
-                                    let id_user = results[0].id_user;
+        const where = {
+            OR: [
+                { name: { contains: search } },
+                { email: { contains: search } },
+                { profession: { contains: search } },
+                { instances: { contains: search } },
+                { subject: { contains: search } },
+            ]
+        }
 
-                                    // Langkah 4: Masukkan data ke dalam history_request_datas
-                                    connection.query(`INSERT INTO history_request_datas
-                                                        (email, name, profession, instances, subject, body, id_user, id_send_data)
-                                                        VALUES(?,?,?,?,?,?,?,?)`,
-                                        [email, name, profession, instances, subject, body, id_user, id_send_data],
-                                        function (error, rows, fields) {
-                                            if (error) {
-                                                console.log(error);
-                                                res.status(500).send("Failed to insert data into history_request_datas");
-                                            } else {
-                                                console.log("Data successfully inserted into history_request_datas");
-                                                res.status(200).send("Data successfully inserted into history_request_datas");                                                
-                                            }
-                                        });
-                                } else {
-                                    console.log("No data found for the specified ID.");
-                                    res.status(404).send("No data found for the specified ID.");
-                                }
-                            }
-                        });
-                    }
-                });
+        if (date_start && date_end) {
+            where.date = {
+                gte: new Date(date_start),
+                lte: new Date(date_end)
+            };
+        } else if (date_start) {
+            where.date = {
+                gte: new Date(date_start)
+            };
+        } else if (date_end) {
+            where.date = {
+                lte: new Date(date_end)
+            };
+        }
+
+        const requestDatas = await prisma.request_Datas.findMany({
+            skip: (page - 1) * 10,
+            take: 10,
+            orderBy: {
+                id_request_data: 'desc'
+            },
+            where
+        });
+
+        const count = await prisma.request_Datas.count({ where });
+        const pagination = {
+            page,
+            total_page: Math.ceil(count / 10),
+            total_data: count,
+        }
+        return res.status(200).json({ status: 200, pagination, values: requestDatas });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, message: 'Internal Server Error' });
+    }
+};
+
+exports.webrequestdataid = async (req, res) => {
+    const id = parseInt(req.params.id);
+
+    try {
+        const requestData = await prisma.request_Datas.findUnique({
+            where: { id_request_data: id }
+        });
+
+        if (!requestData) {
+            return res.status(404).json({ status: 404, message: 'Request data not found' });
+        }
+
+        return res.status(200).json({ status: 200, values: [requestData] });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, message: 'Internal Server Error' });
+    }
+};
+
+
+exports.webapproverequestdata = async (req, res) => {
+    const approve = req.body.approve;
+    const id = parseInt(req.params.id);
+
+    try {
+        if (approve === 1) {
+            await prisma.request_Datas.update({
+                where: { id_request_data: id },
+                data: { approve: 1 }
+            });
+
+            const requestData = await prisma.request_Datas.findUnique({
+                where: { id_request_data: id }
+            });
+
+            const email = requestData.email;
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Informasi Pengiriman Data Konservasi Satwa dari Lestari</title>
+                                                                                                      ${email_style.email_style()}
+
+                </head>
+                <body>
+                    <div class="container">
+                        <h1>Informasi Pengiriman Data Konservasi Satwa dari Instansi Lestari</h1>
+                        <p>Salam sejahtera,</p>
+                        <p>Kami dari Instansi Lestari ingin memberitahu Anda bahwa data konservasi satwa yang Anda minta tidak dapat kami kirimkan karena suatu hal.</p>                                                                           
+                        <p>Terima kasih telah menggunakan layanan kami. Jika Anda memiliki pertanyaan lebih lanjut, jangan ragu untuk menghubungi kami di nomor yang tercantum di bawah ini atau melalui email.</p>
+                        <p>Salam hormat,</p>
+                        <p>Tim Lestari</p>
+                        <p>Contact: ${process.env.EMAIL} | Phone: <a href="${process.env.PHONE_WA}">${process.env.PHONE_FORMATTED}</a></p>  
+                    </div>
+                </body>
+                </html>
+            `;
+
+            await sendEmail(email, "Data Datwa Liar", htmlContent);
+            return res.status(200).json({ status: 200, message: "Request rejected" });
+        } else if (approve === 2) {
+            await prisma.request_Datas.update({
+                where: { id_request_data: id },
+                data: { approve: 2 }
+            });
+            return res.status(200).json({ status: 200, message: "Request approved" });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, message: 'Internal Server Error' });
+    }
+};
+
+exports.websendrequestdata = async (req, res) => {
+    const {
+        local_name, latin_name, habitat, description, city, longitude,
+        latitude, image, amount, date_start, date_end, id_request_data
+    } = req.body;
+
+    try {
+        // Step 1: Insert data into send_datas
+        const sendData = await prisma.send_Datas.create({
+            data: {
+                local_name, latin_name, habitat, description, city,
+                longitude, latitude, image, amount, date_start, date_end
             }
         });
+
+        // Step 2: Get the max id_send_data
+        const id_send_data = sendData.id_send_data;
+
+        // Step 3: Get data from request_datas
+        const requestData = await prisma.request_Datas.findUnique({
+            where: { id_request_data: parseInt(id_request_data) }
+        });
+
+        if (!requestData) {
+            return res.status(404).send("No data found for the specified ID.");
+        }
+
+        const {
+            name, email, profession, instances, subject, body, id_user
+        } = requestData;
+        const now = new Date();
+        const datetimenow = now.toISOString()
+
+        // Step 4: Insert data into history_request_datas
+        await prisma.history_Request_Datas.create({
+            data: {
+                email, name, profession, instances, subject, body,
+                id_user, id_send_data, date: datetimenow
+            }
+        });
+
+        // Step 5: Create CSV file and save to 'upload/data' directory
+        const selectedFields = [];
+        if (local_name) selectedFields.push("local_name");
+        if (latin_name) selectedFields.push("latin_name");
+        if (habitat) selectedFields.push("habitat");
+        if (description) selectedFields.push("description");
+        if (city) selectedFields.push("city");
+        if (longitude) selectedFields.push("longitude");
+        if (latitude) selectedFields.push("latitude");
+        if (image) selectedFields.push("image");
+        if (amount) selectedFields.push("amount");
+
+        const selectedFieldsString = selectedFields.join(", ");
+        const query_filtering = `SELECT ${selectedFieldsString} FROM animals WHERE date >= '${date_start}' AND date <= '${date_end}'`;
+
+        const animalsData = await prisma.$queryRawUnsafe(query_filtering);
+
+        if (animalsData.length === 0) {
+            return res.status(400).send("There's no data in range");
+        }
+
+        let result = animalsData.map(row => ({
+            local_name: row.local_name,
+            latin_name: row.latin_name,
+            habitat: row.habitat,
+            description: row.description,
+            city: row.city,
+            longitude: row.longitude,
+            latitude: row.latitude,
+            amount: row.amount,
+            image: row.image ? `${process.env.BASE_URL}/v1/mob/image/animal/${row.image}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+        }));
+
+        // Create CSV
+        let csv = selectedFields.join(',') + '\n';
+        result.forEach(row => {
+            csv += Object.values(row).map(value => (
+                typeof value === 'string' && value.includes(',') ? `"${value}"` : value
+            )).join(',') + '\n';
+        });
+
+        const rootDir = process.cwd();
+        const dataDir = path.join(rootDir, 'upload/data');
+
+        if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true });
+        }
+
+        const formattedDate = now.toISOString().split('T')[0].replace(/-/g, '');
+        const fileName = `${id_send_data}_${name}_${formattedDate}.csv`;
+        const filePath = path.join(dataDir, fileName);
+
+        fs.writeFileSync(filePath, csv);
+
+        console.log(`File CSV berhasil disimpan di ${filePath}`);
+        const fileURL = `${process.env.BASE_URL}/v1/mob/data/${fileName}`;
+
+        const day = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][now.getDay()];
+        const month = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][now.getMonth()];
+        const formattedDateTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')} ${day}, ${now.getDate()} ${month} ${now.getFullYear()}`;
+
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Informasi Pengiriman Data Konservasi Satwa dari Lestari</title>
+                                                                                                ${email_style.email_style()}
+
+            </head>
+            <body>
+                <div class="container">
+                    <h1>Informasi Pengiriman Data Konservasi Satwa dari Instansi Lestari</h1>
+                    <p>Salam sejahtera,</p>
+                    <p>Kami dari Instansi Lestari ingin memberitahu Anda bahwa data konservasi satwa yang Anda minta telah berhasil kami kirimkan. Berikut adalah detail pengiriman:</p>
+                    <ul>
+                        <li><strong>Tanggal Pengiriman:</strong> ${formattedDateTime}</li>
+                        <li><strong>Jenis Data:</strong> Data Konservasi Satwa</li>
+                        <li><strong>Metode Pengiriman:</strong> Email</li>
+                        <li><strong>Nama Penerima:</strong> ${name}</li>
+                        <li><strong>Alamat Email Penerima:</strong> ${email}</li>                                            
+                    </ul>
+                    <p>Terima kasih telah menggunakan layanan kami. Jika Anda memiliki pertanyaan lebih lanjut, jangan ragu untuk menghubungi kami di nomor yang tercantum di bawah ini atau melalui email.</p>
+                    <p>Salam hormat,</p>
+                    <p>Tim Lestari</p>
+                    <p>Contact: ${process.env.EMAIL} | Phone: <a href="${process.env.PHONE_WA}">${process.env.PHONE_FORMATTED}</a></p>
+                    <a href="${fileURL}" class="button">Unduh Data</a>
+                </div>
+            </body>
+            </html>
+        `;
+
+        await sendEmail(email, "Data Datwa Liar", htmlContent);
+
+        // Step 6: Update URL in request_datas
+        await prisma.request_Datas.update({
+            where: { id_request_data: parseInt(id_request_data) },
+            data: { url: fileURL }
+        });
+
+        return res.status(200).send("Data telah berhasil dikirim dan URL CSV telah disimpan.");
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send("Failed to send request data");
+    }
 };
