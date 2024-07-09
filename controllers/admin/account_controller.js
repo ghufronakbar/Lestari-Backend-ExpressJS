@@ -7,7 +7,7 @@ const md5 = require('md5');
 const ip = require('ip');
 
 exports.login = async function (req, res) {
-    const { email, password } = req.body;
+    const { email, password } = req.body;   
 
     try {
         if (!email || !password) {

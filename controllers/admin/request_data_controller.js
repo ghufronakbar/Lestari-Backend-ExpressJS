@@ -169,9 +169,9 @@ exports.websendrequestdata = async (req, res) => {
         latitude, image, amount, date_start, date_end, id_request_data
     } = req.body;
 
-    const { protocol, host } = req;
-    const port = ":"+ req.port || process.env.PORT || ""
-    const baseUrl = `${protocol}://${host}${port}`
+    const { protocol, hostname } = req;
+    const port = req.port !== undefined ? `:${req.port}` : process.env.PORT !== undefined ? `:${process.env.PORT}` : '';
+    const baseUrl = `${protocol}//${hostname}${port}`;
 
 
     try {
