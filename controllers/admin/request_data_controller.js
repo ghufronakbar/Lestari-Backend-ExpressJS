@@ -182,9 +182,9 @@ exports.websendrequestdata = async (req, res) => {
         });
 
         if (!validateRequestData) {
-            return res.status(404).send("No data found for the specified ID.");
+            return res.status(404).json({ status: 404, message: "No data found for the specified ID." });
         } else if (validateRequestData && validateRequestData.approve !== 2) {
-            return res.status(400).send("Not allowed to send data.");
+            return res.status(400).json({ status: 400, message: "Not allowed to send data." });
         }
 
         // Step 1: Insert data into send_datas
@@ -204,7 +204,7 @@ exports.websendrequestdata = async (req, res) => {
         });
 
         if (!requestData) {
-            return res.status(404).send("No data found for the specified ID.");
+            return res.status(404).json({ status: 404, message: "No data found for the specified ID." });
         }
 
         const {
@@ -258,7 +258,7 @@ exports.websendrequestdata = async (req, res) => {
         })
 
         if (animalsData.length === 0) {
-            return res.status(400).send("There's no data in range");
+            return res.status(400).json({ status: 400, message: "There's no data in range" });
         }
 
         let result = animalsData.map(row => ({
@@ -341,9 +341,9 @@ exports.websendrequestdata = async (req, res) => {
             data: { url: fileURL }
         });
 
-        return res.status(200).send("Data telah berhasil dikirim dan URL CSV telah disimpan.");
+        return res.status(200).json({ status: 200, message: "Request data sent successfully" });
     } catch (error) {
         console.error(error);
-        return res.status(500).send("Failed to send request data");
+        return res.status(500).json({ status: 500, message: "Failed to send request data" });
     }
 };
