@@ -12,6 +12,9 @@ exports.mobeditableanimals = async (req, res) => {
   const today = new Date();
   const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
   const formattedDate = sevenDaysAgo.toISOString().slice(0, 10);
+  const { protocol, host } = req;
+  const port = req.port || process.env.PORT;
+  const baseUrl = `${protocol}://${host}:${port}`
 
   try {
     const animals = await prisma.animals.findMany({
@@ -48,7 +51,7 @@ exports.mobeditableanimals = async (req, res) => {
       city: animal.city,
       longitude: animal.longitude,
       latitude: animal.latitude,
-      image: animal.image ? `${process.env.BASE_URL}/v1/mob/image/animal/${animal.image}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+      image: animal.image ? `${baseUrl}/v1/mob/image/animal/${animal.image}` : `${baseUrl}/v1/mob/image/default/picture.webp`,
       amount: animal.amount,
       updated_at: animal.updated_at
     }));
@@ -63,6 +66,9 @@ exports.mobeditableanimals = async (req, res) => {
 exports.mobeditableanimalid = async (req, res) => {
   const { id_user } = req.decoded;
   const { id_animal } = req.params;
+  const { protocol, host } = req;
+  const port = req.port || process.env.PORT;
+  const baseUrl = `${protocol}://${host}:${port}`
 
   try {
     const animal = await prisma.animals.findFirst({
@@ -99,7 +105,7 @@ exports.mobeditableanimalid = async (req, res) => {
       city: animal.city,
       longitude: animal.longitude,
       latitude: animal.latitude,
-      image: animal.image ? `${process.env.BASE_URL}/v1/mob/image/animal/${animal.image}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+      image: animal.image ? `${baseUrl}/v1/mob/image/animal/${animal.image}` : `${baseUrl}/v1/mob/image/default/picture.webp`,
       amount: animal.amount,
       id_user: animal.id_user,
       date: animal.date,

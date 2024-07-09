@@ -4,6 +4,11 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 exports.webanimals = async (req, res) => {
+
+    const { protocol, host } = req;
+    const port = req.port || process.env.PORT;
+    const baseUrl = `${protocol}://${host}:${port}`
+
     try {
         let { page, search, date_start, date_end } = req.query
         if (search === undefined || search === '') { search = '' }
@@ -12,8 +17,8 @@ exports.webanimals = async (req, res) => {
 
         const where = {
             OR: [
-                { local_name: { contains: search } },
-                { latin_name: { contains: search } }
+                { local_name: { contains: search, mode: 'insensitive' } },
+                { latin_name: { contains: search, mode: 'insensitive' } }
             ]
         }
         if (date_start && date_end) {
@@ -60,12 +65,12 @@ exports.webanimals = async (req, res) => {
             longitude: animal.longitude,
             latitude: animal.latitude,
             url_google_map: `http://maps.google.com/maps/search/?api=1&query=${animal.latitude}%2C${animal.longitude}`,
-            image: animal.image ? `${process.env.BASE_URL}/v1/mob/image/animal/${animal.image}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+            image: animal.image ? `${baseUrl}/v1/mob/image/animal/${animal.image}` : `${baseUrl}/v1/mob/image/default/picture.webp`,
             amount: animal.amount,
             id_user: animal.user.id_user,
             name: animal.user.name,
             email: animal.user.email,
-            user_picture: animal.user.picture ? `${process.env.BASE_URL}/v1/mob/image/profile/${animal.user.picture}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+            user_picture: animal.user.picture ? `${baseUrl}/v1/mob/image/profile/${animal.user.picture}` : `${baseUrl}/v1/mob/image/default/picture.webp`,
             phone: animal.user.phone,
             date: animal.date,
             updated_at: animal.updated_at
@@ -89,6 +94,9 @@ exports.webanimals = async (req, res) => {
 
 exports.webanimalid = async (req, res) => {
     const id = parseInt(req.params.id);
+    const { protocol, host } = req;
+    const port = req.port || process.env.PORT;
+    const baseUrl = `${protocol}://${host}:${port}`
 
     try {
         const animal = await prisma.animals.findUnique({
@@ -121,12 +129,12 @@ exports.webanimalid = async (req, res) => {
             city: animal.city,
             longitude: animal.longitude,
             latitude: animal.latitude,
-            image: animal.image ? `${process.env.BASE_URL}/v1/mob/image/animal/${animal.image}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+            image: animal.image ? `${baseUrl}/v1/mob/image/animal/${animal.image}` : `${baseUrl}/v1/mob/image/default/picture.webp`,
             amount: animal.amount,
             id_user: animal.user.id_user,
             name: animal.user.name,
             email: animal.user.email,
-            user_picture: animal.user.picture ? `${process.env.BASE_URL}/v1/mob/image/profile/${animal.user.picture}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+            user_picture: animal.user.picture ? `${baseUrl}/v1/mob/image/profile/${animal.user.picture}` : `${baseUrl}/v1/mob/image/default/picture.webp`,
             phone: animal.user.phone,
             date: animal.date,
             updated_at: animal.updated_at

@@ -11,10 +11,10 @@ exports.webhistoryrequestdatas = async (req, res) => {
         if (page === undefined || isNaN(page)) { page = 1 }
         const where = {
             OR: [
-                { email: { contains: search } },
-                { name: { contains: search } },
-                { profession: { contains: search } },
-                { instances: { contains: search } },
+                { email: { contains: search, mode: 'insensitive' } },
+                { name: { contains: search, mode: 'insensitive' } },
+                { profession: { contains: search, mode: 'insensitive' } },
+                { instances: { contains: search, mode: 'insensitive' } },
             ]
         }
         if (date_start && date_end) {

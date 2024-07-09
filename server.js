@@ -3,6 +3,8 @@ const bodyParser = require("body-parser");
 const app = express();
 const cors = require("cors");
 
+require('dotenv').config()
+
 //parse application json
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -10,12 +12,13 @@ app.use(cors());
 
 //routes
 var routes = require("./routes");
+const { configDotenv } = require("dotenv");
 app.use("/v1/mob/image/animal/", express.static("upload/animals"));
 app.use("/v1/mob/image/profile/", express.static("upload/profiles"));
 app.use("/v1/mob/image/default/", express.static("default"));
 app.use("/v1/mob/data/", express.static("upload/data"));
 routes(app);
 
-app.listen(5000, () => {
-  console.log(`Server started on port`);
+app.listen(process.env.PORT, () => {
+  console.log(`Server started on port ${process.env.PORT}`);
 });

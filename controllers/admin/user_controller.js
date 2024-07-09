@@ -4,6 +4,9 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 exports.webusers = async (req, res) => {
+    const { protocol, host } = req;
+    const port = req.port || process.env.PORT;
+    const baseUrl = `${protocol}://${host}:${port}`
     try {
         let { page, search, status } = req.query
         status = status && parseInt(status)
@@ -16,9 +19,9 @@ exports.webusers = async (req, res) => {
                 id_user: 0
             },
             OR: [
-                { name: { contains: search } },
-                { email: { contains: search } },
-                { phone: { contains: search } }
+                { name: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+                { phone: { contains: search, mode: 'insensitive' } }
             ]
         }
 
@@ -48,7 +51,7 @@ exports.webusers = async (req, res) => {
             id_user: user.id_user,
             name: user.name,
             email: user.email,
-            picture: user.picture ? `${process.env.BASE_URL}/v1/mob/image/profile/${user.picture}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+            picture: user.picture ? `${baseUrl}/v1/mob/image/profile/${user.picture}` : `${baseUrl}/v1/mob/image/default/picture.webp`,
             phone: user.phone,
             created_at: user.created_at,
             updated_at: user.updated_at,
@@ -72,6 +75,9 @@ exports.webusers = async (req, res) => {
 
 exports.webuserid = async (req, res) => {
     const id = parseInt(req.params.id);
+    const { protocol, host } = req;
+    const port = req.port || process.env.PORT;
+    const baseUrl = `${protocol}://${host}:${port}`
 
     try {
         const user = await prisma.users.findUnique({
@@ -96,7 +102,7 @@ exports.webuserid = async (req, res) => {
             id_user: user.id_user,
             name: user.name,
             email: user.email,
-            picture: user.picture ? `${process.env.BASE_URL}/v1/mob/image/profile/${user.picture}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+            picture: user.picture ? `${baseUrl}/v1/mob/image/profile/${user.picture}` : `${baseUrl}/v1/mob/image/default/picture.webp`,
             phone: user.phone,
             created_at: user.created_at,
             updated_at: user.updated_at,

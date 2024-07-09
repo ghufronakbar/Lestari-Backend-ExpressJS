@@ -10,6 +10,12 @@ exports.login = async function (req, res) {
     const { email, password } = req.body;
 
     try {
+        if (!email || !password) {
+            return res.status(400).json({
+                status: 400,
+                message: "Email dan Password wajib diisi!"
+            })
+        }
         // Cari admin berdasarkan email dan password yang di-hash
         const admin = await prisma.admins.findFirst({
             where: {

@@ -12,6 +12,9 @@ const prisma = new PrismaClient();
 
 exports.mobaccount = async (req, res) => {
   const id_user = req.decoded.id_user;
+  const { protocol, host } = req;
+  const port = req.port || process.env.PORT;
+  const baseUrl = `${protocol}://${host}:${port}`
 
   try {
     const userData = await prisma.users.findUnique({
@@ -37,8 +40,8 @@ exports.mobaccount = async (req, res) => {
       name: userData.name,
       phone: userData.phone,
       picture: userData.picture
-        ? `${process.env.BASE_URL}/v1/mob/image/profile/${userData.picture}`
-        : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+        ? `${baseUrl}/v1/mob/image/profile/${userData.picture}`
+        : `${baseUrl}/v1/mob/image/default/picture.webp`,
     };
 
     return res.status(200).json({ status: 200, values: results });

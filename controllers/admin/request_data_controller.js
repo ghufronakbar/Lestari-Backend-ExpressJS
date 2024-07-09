@@ -43,11 +43,11 @@ exports.webrequestdatas = async (req, res) => {
 
         const where = {
             OR: [
-                { name: { contains: search } },
-                { email: { contains: search } },
-                { profession: { contains: search } },
-                { instances: { contains: search } },
-                { subject: { contains: search } },
+                { name: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+                { profession: { contains: search, mode: 'insensitive' } },
+                { instances: { contains: search, mode: 'insensitive' } },
+                { subject: { contains: search, mode: 'insensitive' } },
             ]
         }
 
@@ -169,6 +169,10 @@ exports.websendrequestdata = async (req, res) => {
         latitude, image, amount, date_start, date_end, id_request_data
     } = req.body;
 
+    const { protocol, host } = req;
+    const port = req.port || process.env.PORT;
+    const baseUrl = `${protocol}://${host}:${port}`
+
     try {
         // Step 1: Insert data into send_datas
         const sendData = await prisma.send_Datas.create({
@@ -234,7 +238,7 @@ exports.websendrequestdata = async (req, res) => {
             longitude: row.longitude,
             latitude: row.latitude,
             amount: row.amount,
-            image: row.image ? `${process.env.BASE_URL}/v1/mob/image/animal/${row.image}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+            image: row.image ? `${baseUrl}/v1/mob/image/animal/${row.image}` : `${baseUrl}/v1/mob/image/default/picture.webp`,
         }));
 
         // Create CSV
@@ -259,7 +263,7 @@ exports.websendrequestdata = async (req, res) => {
         fs.writeFileSync(filePath, csv);
 
         console.log(`File CSV berhasil disimpan di ${filePath}`);
-        const fileURL = `${process.env.BASE_URL}/v1/mob/data/${fileName}`;
+        const fileURL = `${baseUrl}/v1/mob/data/${fileName}`;
 
         const day = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][now.getDay()];
         const month = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][now.getMonth()];

@@ -41,11 +41,11 @@ exports.webrequestaccounts = async (req, res) => {
         if (page === undefined || isNaN(page)) { page = 1 }
         const where = {
             OR: [
-                { name: { contains: search } },
-                { email: { contains: search } },
-                { phone: { contains: search } },
-                { subject: { contains: search } },
-                { instances: { contains: search } },
+                { name: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+                { phone: { contains: search, mode: 'insensitive' } },
+                { subject: { contains: search, mode: 'insensitive' } },
+                { instances: { contains: search, mode: 'insensitive' } },
             ]
         }
 

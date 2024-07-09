@@ -5,6 +5,10 @@ const prisma = new PrismaClient();
 
 exports.mobhistoryanimals = async (req, res) => {
   const { id_user } = req.decoded;
+  const { protocol, host } = req;
+  const port = req.port || process.env.PORT;
+  const baseUrl = `${protocol}://${host}:${port}`
+
   try {
     const animals = await prisma.animals.findMany({
       where: { id_user },
@@ -26,7 +30,7 @@ exports.mobhistoryanimals = async (req, res) => {
       id_animal: animal.id_animal,
       local_name: animal.local_name,
       latin_name: animal.latin_name,
-      image: animal.image ? `${process.env.BASE_URL}/v1/mob/image/animal/${animal.image}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+      image: animal.image ? `${baseUrl}/v1/mob/image/animal/${animal.image}` : `${baseUrl}/v1/mob/image/default/picture.webp`,
       city: animal.city,
       longitude: animal.longitude,
       latitude: animal.latitude,
@@ -41,6 +45,10 @@ exports.mobhistoryanimals = async (req, res) => {
 
 exports.mobhistoryanimalid = async (req, res) => {
   const { id_animal } = req.params;
+  const { protocol, host } = req;
+  const port = req.port || process.env.PORT;
+  const baseUrl = `${protocol}://${host}:${port}`
+  
   try {
     const animal = await prisma.animals.findUnique({
       where: { id_animal: parseInt(id_animal) },
@@ -74,7 +82,7 @@ exports.mobhistoryanimalid = async (req, res) => {
       city: animal.city,
       longitude: animal.longitude,
       latitude: animal.latitude,
-      image: animal.image ? `${process.env.BASE_URL}/v1/mob/image/animal/${animal.image}` : `${process.env.BASE_URL}/v1/mob/image/default/picture.webp`,
+      image: animal.image ? `${baseUrl}/v1/mob/image/animal/${animal.image}` : `${baseUrl}/v1/mob/image/default/picture.webp`,
       amount: animal.amount,
       id_user: animal.id_user,
       date: animal.date,
