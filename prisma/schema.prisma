@@ -80,7 +80,7 @@ model Request_Datas {
   date            DateTime @default(now()) @db.Date()
   approve         Int
   id_user         Int
-  url             String
+  url             String? @default("")
   user            Users    @relation(fields: [id_user], references: [id_user], onDelete: Cascade, onUpdate: Cascade)
 }
 

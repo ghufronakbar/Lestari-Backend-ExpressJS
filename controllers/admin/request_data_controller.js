@@ -209,6 +209,10 @@ exports.websendrequestdata = async (req, res) => {
             }
         });
 
+        const select = {
+
+        }
+
         // Step 5: Create CSV file and save to 'upload/data' directory
         const selectedFields = [];
         if (local_name) selectedFields.push("local_name");
@@ -221,10 +225,25 @@ exports.websendrequestdata = async (req, res) => {
         if (image) selectedFields.push("image");
         if (amount) selectedFields.push("amount");
 
-        const selectedFieldsString = selectedFields.join(", ");
-        const query_filtering = `SELECT ${selectedFieldsString} FROM animals WHERE date >= '${date_start}' AND date <= '${date_end}'`;
-
-        const animalsData = await prisma.$queryRawUnsafe(query_filtering);
+        if (local_name) { select.local_name = true }
+        if (latin_name) { select.latin_name = true }
+        if (habitat) { select.habitat = true }
+        if (description) { select.description = true }
+        if (city) { select.city = true }
+        if (longitude) { select.longitude = true }
+        if (latitude) { select.latitude = true }
+        if (image) { select.image = true }
+        if (amount) { select.amount = true }
+        
+        const animalsData = await prisma.animals.findMany({
+            where: {
+                date: {
+                    gte: new Date(date_start),
+                    lte: new Date(date_end),
+                }
+            },
+            select
+        })
 
         if (animalsData.length === 0) {
             return res.status(400).send("There's no data in range");
