@@ -5,9 +5,9 @@ const prisma = new PrismaClient();
 
 exports.webanimals = async (req, res) => {
 
-    const { protocol, hostname } = req;
+    const { hostname } = req;
     const port = req.port !== undefined ? `:${req.port}` : process.env.PORT !== undefined ? `:${process.env.PORT}` : '';
-    const baseUrl = `${protocol}//${hostname}${port}`;
+    const baseUrl = `http://${hostname}${port}`;
 
     try {
         let { page, search, date_start, date_end } = req.query
@@ -94,10 +94,10 @@ exports.webanimals = async (req, res) => {
 
 exports.webanimalid = async (req, res) => {
     const id = parseInt(req.params.id);
-   
-    const { protocol, hostname } = req;
+
+    const { hostname } = req;
     const port = req.port !== undefined ? `:${req.port}` : process.env.PORT !== undefined ? `:${process.env.PORT}` : '';
-    const baseUrl = `${protocol}//${hostname}${port}`;
+    const baseUrl = `http://${hostname}${port}`;
 
     try {
         const animal = await prisma.animals.findUnique({

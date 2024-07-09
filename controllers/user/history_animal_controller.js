@@ -6,9 +6,9 @@ const prisma = new PrismaClient();
 exports.mobhistoryanimals = async (req, res) => {
   const { id_user } = req.decoded;
 
-  const { protocol, hostname } = req;
+  const { hostname } = req;
   const port = req.port !== undefined ? `:${req.port}` : process.env.PORT !== undefined ? `:${process.env.PORT}` : '';
-  const baseUrl = `${protocol}//${hostname}${port}`;
+  const baseUrl = `http://${hostname}${port}`;
 
   try {
     const animals = await prisma.animals.findMany({

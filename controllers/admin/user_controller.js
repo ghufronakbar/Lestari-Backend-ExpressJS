@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 exports.webusers = async (req, res) => {
     const { protocol, host } = req;
-    const port = ":"+ req.port || process.env.PORT || ""
+    const port = ":" + req.port || process.env.PORT || ""
     const baseUrl = `${protocol}://${host}${port}`
     try {
         let { page, search, status } = req.query
@@ -76,9 +76,9 @@ exports.webusers = async (req, res) => {
 exports.webuserid = async (req, res) => {
     const id = parseInt(req.params.id);
 
-        const { protocol, hostname } = req;
+    const { hostname } = req;
     const port = req.port !== undefined ? `:${req.port}` : process.env.PORT !== undefined ? `:${process.env.PORT}` : '';
-    const baseUrl = `${protocol}//${hostname}${port}`;
+    const baseUrl = `http://${hostname}${port}`;
 
     try {
         const user = await prisma.users.findUnique({

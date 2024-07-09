@@ -13,9 +13,9 @@ exports.mobeditableanimals = async (req, res) => {
   const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
   const formattedDate = sevenDaysAgo.toISOString().slice(0, 10);
 
-  const { protocol, hostname } = req;
+  const { hostname } = req;
   const port = req.port !== undefined ? `:${req.port}` : process.env.PORT !== undefined ? `:${process.env.PORT}` : '';
-  const baseUrl = `${protocol}//${hostname}${port}`;
+  const baseUrl = `http://${hostname}${port}`;
 
   try {
     const animals = await prisma.animals.findMany({
@@ -68,9 +68,9 @@ exports.mobeditableanimalid = async (req, res) => {
   const { id_user } = req.decoded;
   const { id_animal } = req.params;
 
-  const { protocol, hostname } = req;
+  const { hostname } = req;
   const port = req.port !== undefined ? `:${req.port}` : process.env.PORT !== undefined ? `:${process.env.PORT}` : '';
-  const baseUrl = `${protocol}//${hostname}${port}`;
+  const baseUrl = `http://${hostname}${port}`;
 
   try {
     const animal = await prisma.animals.findFirst({

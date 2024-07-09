@@ -4,9 +4,9 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 exports.mobhistoryrequestdata = async function (req, res) {
-  const { protocol, hostname } = req;
+  const { hostname } = req;
   const port = req.port !== undefined ? `:${req.port}` : process.env.PORT !== undefined ? `:${process.env.PORT}` : '';
-  const baseUrl = `${protocol}//${hostname}${port}`;
+  const baseUrl = `http://${hostname}${port}`;
 
   try {
     const id_user = req.decoded.id_user;
@@ -52,9 +52,9 @@ exports.mobhistoryrequestdata = async function (req, res) {
 };
 
 exports.mobhistoryrequestdatabyid = async function (req, res) {
-  const { protocol, hostname } = req;
+  const { hostname } = req;
   const port = req.port !== undefined ? `:${req.port}` : process.env.PORT !== undefined ? `:${process.env.PORT}` : '';
-  const baseUrl = `${protocol}//${hostname}${port}`;
+  const baseUrl = `http://${hostname}${port}`;
 
   try {
     const id_request_data = parseInt(req.params.id_request_data);
