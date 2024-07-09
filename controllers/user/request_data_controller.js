@@ -5,8 +5,8 @@ const prisma = new PrismaClient();
 
 exports.mobhistoryrequestdata = async function (req, res) {
   const { protocol, host } = req;
-  const port = req.port || process.env.PORT;
-  const baseUrl = `${protocol}://${host}:${port}`
+  const port = ":" + req.port || process.env.PORT || ""
+  const baseUrl = `${protocol}://${host}${port}`
 
   try {
     const id_user = req.decoded.id_user;
@@ -53,9 +53,9 @@ exports.mobhistoryrequestdata = async function (req, res) {
 
 exports.mobhistoryrequestdatabyid = async function (req, res) {
   const { protocol, host } = req;
-  const port = req.port || process.env.PORT;
-  const baseUrl = `${protocol}://${host}:${port}`
-  
+  const port = ":" + req.port || process.env.PORT || ""
+  const baseUrl = `${protocol}://${host}${port}`
+
   try {
     const id_request_data = parseInt(req.params.id_request_data);
     const requestData = await prisma.request_Datas.findUnique({

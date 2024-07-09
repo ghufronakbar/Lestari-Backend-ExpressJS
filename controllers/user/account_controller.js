@@ -13,8 +13,8 @@ const prisma = new PrismaClient();
 exports.mobaccount = async (req, res) => {
   const id_user = req.decoded.id_user;
   const { protocol, host } = req;
-  const port = req.port || process.env.PORT;
-  const baseUrl = `${protocol}://${host}:${port}`
+    const port = ":"+ req.port || process.env.PORT || ""
+    const baseUrl = `${protocol}://${host}${port}`
 
   try {
     const userData = await prisma.users.findUnique({

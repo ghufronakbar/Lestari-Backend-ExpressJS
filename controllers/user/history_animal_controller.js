@@ -5,9 +5,10 @@ const prisma = new PrismaClient();
 
 exports.mobhistoryanimals = async (req, res) => {
   const { id_user } = req.decoded;
+
   const { protocol, host } = req;
-  const port = req.port || process.env.PORT;
-  const baseUrl = `${protocol}://${host}:${port}`
+  const port = ":" + req.port || process.env.PORT || ""
+  const baseUrl = `${protocol}://${host}${port}`
 
   try {
     const animals = await prisma.animals.findMany({
@@ -45,10 +46,11 @@ exports.mobhistoryanimals = async (req, res) => {
 
 exports.mobhistoryanimalid = async (req, res) => {
   const { id_animal } = req.params;
+
   const { protocol, host } = req;
-  const port = req.port || process.env.PORT;
-  const baseUrl = `${protocol}://${host}:${port}`
-  
+  const port = ":" + req.port || process.env.PORT || ""
+  const baseUrl = `${protocol}://${host}${port}`
+
   try {
     const animal = await prisma.animals.findUnique({
       where: { id_animal: parseInt(id_animal) },

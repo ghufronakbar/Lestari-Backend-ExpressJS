@@ -170,9 +170,9 @@ exports.websendrequestdata = async (req, res) => {
     } = req.body;
 
     const { protocol, host } = req;
-    const port = req.port || process.env.PORT;
-    const baseUrl = `${protocol}://${host}:${port}`
-    
+    const port = ":"+ req.port || process.env.PORT || ""
+    const baseUrl = `${protocol}://${host}${port}`
+
 
     try {
         // Step 1: Insert data into send_datas
