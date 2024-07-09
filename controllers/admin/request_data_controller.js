@@ -239,7 +239,7 @@ exports.websendrequestdata = async (req, res) => {
             longitude: row.longitude,
             latitude: row.latitude,
             amount: row.amount,
-            image: row.image ? `${baseUrl}/v1/mob/image/animal/${row.image}` : `${baseUrl}/v1/mob/image/default/picture.webp`,
+            image: row.image ? `${baseUrl}/v1/mob/image/animal/${row.image}` : `${baseUrl}/v1/mob/image/animal/default.png`,
         }));
 
         // Create CSV

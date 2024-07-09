@@ -42,7 +42,7 @@ exports.mobaccount = async (req, res) => {
       phone: userData.phone,
       picture: userData.picture
         ? `${baseUrl}/v1/mob/image/profile/${userData.picture}`
-        : `${baseUrl}/v1/mob/image/default/picture.webp`,
+        : `${baseUrl}/v1/mob/image/profile/default.png`,
     };
 
     return res.status(200).json({ status: 200, values: results });
@@ -129,7 +129,7 @@ exports.mobregisteruser = async (req, res) => {
         subject,
         body,
         date: date_now,
-        approve: 0, // Default value for approve set to 1
+        approve: 0,
       },
     });
 

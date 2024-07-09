@@ -105,7 +105,7 @@ exports.webuserid = async (req, res) => {
             id_user: user.id_user,
             name: user.name,
             email: user.email,
-            picture: user.picture ? `${baseUrl}/v1/mob/image/profile/${user.picture}` : `${baseUrl}/v1/mob/image/default/picture.webp`,
+            picture: user.picture ? `${baseUrl}/v1/mob/image/profile/${user.picture}` : `${baseUrl}/v1/mob/image/profile/default.png`,
             phone: user.phone,
             created_at: user.created_at,
             updated_at: user.updated_at,

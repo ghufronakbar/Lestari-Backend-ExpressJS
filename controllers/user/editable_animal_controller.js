@@ -52,7 +52,7 @@ exports.mobeditableanimals = async (req, res) => {
       city: animal.city,
       longitude: animal.longitude,
       latitude: animal.latitude,
-      image: animal.image ? `${baseUrl}/v1/mob/image/animal/${animal.image}` : `${baseUrl}/v1/mob/image/default/picture.webp`,
+      image: animal.image ? `${baseUrl}/v1/mob/image/animal/${animal.image}` : `${baseUrl}/v1/mob/image/animal/default.png`,
       amount: animal.amount,
       updated_at: animal.updated_at
     }));
@@ -107,7 +107,7 @@ exports.mobeditableanimalid = async (req, res) => {
       city: animal.city,
       longitude: animal.longitude,
       latitude: animal.latitude,
-      image: animal.image ? `${baseUrl}/v1/mob/image/animal/${animal.image}` : `${baseUrl}/v1/mob/image/default/picture.webp`,
+      image: animal.image ? `${baseUrl}/v1/mob/image/animal/${animal.image}` : `${baseUrl}/v1/mob/image/animal/default.png`,
       amount: animal.amount,
       id_user: animal.id_user,
       date: animal.date,
