@@ -15,8 +15,9 @@ const routes = require("./routes");
 
 app.use("/v1/mob/image/animal/", express.static("upload/animals"));
 app.use("/v1/mob/image/profile/", express.static("upload/profiles"));
-app.use("/v1/mob/image/default/", express.static("default"));
+app.use("/v1/mob/image/default/", express.static("upload/default"));
 app.use("/v1/mob/data/", express.static("upload/data"));
+
 routes(app);
 
 app.listen(process.env.ROOT_PORT, () => {

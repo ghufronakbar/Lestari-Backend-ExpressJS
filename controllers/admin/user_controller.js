@@ -4,9 +4,11 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 exports.webusers = async (req, res) => {
-    const { protocol, host } = req;
-    const port = ":" + req.port || process.env.PORT || ""
-    const baseUrl = `${protocol}://${host}${port}`
+
+    const { hostname } = req;
+    const port = req.port !== undefined ? `:${req.port}` : process.env.PORT !== undefined ? `:${process.env.PORT}` : '';
+    const baseUrl = `http://${hostname}${port}`;
+    
     try {
         let { page, search, status } = req.query
         status = status && parseInt(status)
