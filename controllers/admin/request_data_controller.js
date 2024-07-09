@@ -175,6 +175,18 @@ exports.websendrequestdata = async (req, res) => {
 
 
     try {
+
+        const validateRequestData = await prisma.request_Datas.findFirst({
+            where: { id_request_data: parseInt(id_request_data) },
+            select: { approve: true }
+        });
+
+        if (!validateRequestData) {
+            return res.status(404).send("No data found for the specified ID.");
+        } else if (validateRequestData && validateRequestData.approve !== 2) {
+            return res.status(400).send("Not allowed to send data.");
+        }
+
         // Step 1: Insert data into send_datas
         const sendData = await prisma.send_Datas.create({
             data: {
@@ -234,7 +246,7 @@ exports.websendrequestdata = async (req, res) => {
         if (latitude) { select.latitude = true }
         if (image) { select.image = true }
         if (amount) { select.amount = true }
-        
+
         const animalsData = await prisma.animals.findMany({
             where: {
                 date: {
